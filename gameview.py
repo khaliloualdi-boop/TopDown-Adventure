@@ -20,6 +20,7 @@ class GameView(arcade.View):
     ground: arcade.SpriteList
     physics_engine: Final[arcade.PhysicsEngineSimple]
     camera: Final[arcade.camera.Camera2D]
+    crystals: arcade.SpriteList
 
     def __init__(self) -> None:
         # Magical incantion: initialize the Arcade view
@@ -57,6 +58,13 @@ class GameView(arcade.View):
 
         self.player_list = arcade.SpriteList()
 
+        self.crystals = arcade.SpriteList(use_spatial_hash=True)
+
+        crystals_coord = [(5,2),(6,5),(3,5)]
+
+        for x, y in crystals_coord:
+            self.crystals.append(arcade.TextureAnimationSprite(animation = ANIMATION_CRISTAUX, scale = SCALE, center_x = grid_to_pixels(x), center_y = grid_to_pixels(y)))
+
     def on_show_view(self) -> None:
         """Called automatically by 'window.show_view(game_view)' in main.py."""
         # When we show the view, adjust the window's size to our world size.
@@ -71,6 +79,7 @@ class GameView(arcade.View):
         with self.camera.activate():
             self.ground.draw()
             self.wall.draw()
+            self.crystals.draw()
             arcade.draw_sprite(self.player)
 
 # Controle clavier (mouvement) :
@@ -98,4 +107,8 @@ class GameView(arcade.View):
     def on_update(self, delta_time: float) -> None:
         self.physics_engine.update() # MAJ de la position et gestion des collisions par le physics engine
         self.player.update_animation()
+        self.crystals.update_animation()
+
         self.camera.position = self.player.position
+        for x in arcade.check_for_collision_with_list(self.player, self.crystals):
+            x.remove_from_sprite_lists()
