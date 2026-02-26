@@ -1,4 +1,4 @@
-from arcade import PhysicsEngineSimple
+from arcade import PhysicsEngineSimple, TextureAnimationSprite
 from typing import Final
 import arcade
 
@@ -14,10 +14,12 @@ class GameView(arcade.View):
     world_width: Final[int]
     world_height: Final[int]
 
-    player: Final[arcade.Sprite]
-    physics_engine = Final[arcade.PhysicsEngineSimple]
-    wall = arcade.SpriteList(use_spatial_hash = True)
-    ground = arcade.SpriteList(use_spatial_hash = True)
+    player: Final[arcade.TextureAnimationSprite]
+    player_list: Final[arcade.SpriteList[arcade.TextureAnimationSprite]]
+    wall: arcade.SpriteList
+    ground: arcade.SpriteList
+    physics_engine: Final[arcade.PhysicsEngineSimple]
+    camera: Final[arcade.camera.Camera2D]
 
     def __init__(self) -> None:
         # Magical incantion: initialize the Arcade view
@@ -30,14 +32,19 @@ class GameView(arcade.View):
         self.world_width = 40 * TILE_SIZE
         self.world_height = 20 * TILE_SIZE
 
-        self.player = arcade.Sprite(
-            TEXTURE_PLAYER_IDLE_DOWN,
+        self.player = arcade.TextureAnimationSprite(
+            animation = ANIMATION_PLAYER_IDLE_DOWN,
             scale=SCALE, center_x=grid_to_pixels(2), center_y=grid_to_pixels(2)
         )
+
+        self.wall = arcade.SpriteList(use_spatial_hash=True)
+        self.ground = arcade.SpriteList(use_spatial_hash=True)
 
         for i in range(20):
             for j in range(40):
                 self.ground.append(arcade.Sprite(TEXTURE_GRASS, scale = SCALE, center_x = grid_to_pixels(i) , center_y = grid_to_pixels(j)))
+                if i == 0 or j == 0 or i == 19 or j == 39: # Bordures manuelles
+                    self.wall.append(arcade.Sprite(TEXTURE_BUSH, scale = SCALE, center_x = grid_to_pixels(i), center_y = grid_to_pixels(j)))
 
         grass_coord = [(3,6),(7,2),(2,10),(3,8)]
 
@@ -45,6 +52,10 @@ class GameView(arcade.View):
             self.wall.append(arcade.Sprite(TEXTURE_BUSH, scale = SCALE, center_x = grid_to_pixels(x), center_y = grid_to_pixels(y)))
 
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
+
+        self.camera = arcade.camera.Camera2D()
+
+        self.player_list = arcade.SpriteList()
 
     def on_show_view(self) -> None:
         """Called automatically by 'window.show_view(game_view)' in main.py."""
@@ -57,9 +68,12 @@ class GameView(arcade.View):
     def on_draw(self) -> None:
         """Render the screen."""
         self.clear() # always start with self.clear()
-        self.ground.draw()
-        self.wall.draw()
-        arcade.draw_sprite(self.player)
+        with self.camera.activate():
+            self.ground.draw()
+            self.wall.draw()
+            arcade.draw_sprite(self.player)
+
+# Controle clavier (mouvement) :
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
@@ -71,6 +85,8 @@ class GameView(arcade.View):
                 self.player.change_y = + PLAYER_MOVEMENT_SPEED
             case arcade.key.DOWN:
                 self.player.change_y = - PLAYER_MOVEMENT_SPEED
+            case arcade.key.SPACE:
+                self.window.show_view(GameView())
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
         match symbol:
@@ -80,4 +96,6 @@ class GameView(arcade.View):
                 self.player.change_y = 0
 
     def on_update(self, delta_time: float) -> None:
-        self.physics_engine.update()
+        self.physics_engine.update() # MAJ de la position et gestion des collisions par le physics engine
+        self.player.update_animation()
+        self.camera.position = self.player.position
