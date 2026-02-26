@@ -9,3 +9,6 @@ TILE_SIZE = 32
 
 MAX_WINDOW_WIDTH = 14 * TILE_SIZE
 MAX_WINDOW_HEIGHT = 14 * TILE_SIZE
+
+PLAYER_MOVEMENT_SPEED = 4
+"""Vitesse du joueur en pixel par frames."""

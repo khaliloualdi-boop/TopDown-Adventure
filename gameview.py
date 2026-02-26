@@ -1,3 +1,4 @@
+from arcade import PhysicsEngineSimple
 from typing import Final
 import arcade
 
@@ -14,6 +15,7 @@ class GameView(arcade.View):
     world_height: Final[int]
 
     player: Final[arcade.Sprite]
+    physics_engine = Final[arcade.PhysicsEngineSimple]
     wall = arcade.SpriteList(use_spatial_hash = True)
     ground = arcade.SpriteList(use_spatial_hash = True)
 
@@ -42,6 +44,8 @@ class GameView(arcade.View):
         for x, y in grass_coord:
             self.wall.append(arcade.Sprite(TEXTURE_BUSH, scale = SCALE, center_x = grid_to_pixels(x), center_y = grid_to_pixels(y)))
 
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
+
     def on_show_view(self) -> None:
         """Called automatically by 'window.show_view(game_view)' in main.py."""
         # When we show the view, adjust the window's size to our world size.
@@ -56,3 +60,24 @@ class GameView(arcade.View):
         self.ground.draw()
         self.wall.draw()
         arcade.draw_sprite(self.player)
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        match symbol:
+            case arcade.key.RIGHT:
+                self.player.change_x = + PLAYER_MOVEMENT_SPEED
+            case arcade.key.LEFT:
+                self.player.change_x = - PLAYER_MOVEMENT_SPEED
+            case arcade.key.UP:
+                self.player.change_y = + PLAYER_MOVEMENT_SPEED
+            case arcade.key.DOWN:
+                self.player.change_y = - PLAYER_MOVEMENT_SPEED
+
+    def on_key_release(self, symbol: int, modifiers: int) -> None:
+        match symbol:
+            case arcade.key.RIGHT | arcade.key.LEFT:
+                self.player.change_x = 0
+            case arcade.key.UP | arcade.key.DOWN:
+                self.player.change_y = 0
+
+    def on_update(self, delta_time: float) -> None:
+        self.physics_engine.update()
