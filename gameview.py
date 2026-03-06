@@ -1,7 +1,7 @@
-from arcade import PhysicsEngineSimple, TextureAnimationSprite
+from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList
 from typing import Final
 import arcade
-
+from map import *
 from constants import *
 from textures import *
 
@@ -22,7 +22,8 @@ class GameView(arcade.View):
     camera: Final[arcade.camera.Camera2D]
     crystals: arcade.SpriteList
 
-    def __init__(self) -> None:
+
+    def __init__(self, map: Map) -> None:
         # Magical incantion: initialize the Arcade view
         super().__init__()
 
@@ -30,22 +31,28 @@ class GameView(arcade.View):
         self.background_color = arcade.csscolor.CORNFLOWER_BLUE
 
         # Setup our game
-        self.world_width = 40 * TILE_SIZE
-        self.world_height = 20 * TILE_SIZE
+        self.world_width = map.width * TILE_SIZE
+        self.world_height = map.height * TILE_SIZE
 
         self.player = arcade.TextureAnimationSprite(
             animation = ANIMATION_PLAYER_IDLE_DOWN,
-            scale=SCALE, center_x=grid_to_pixels(2), center_y=grid_to_pixels(2)
+            scale=SCALE, center_x=grid_to_pixels(map.player_center_x), center_y=grid_to_pixels(map.player_center_y)
         )
 
         self.wall = arcade.SpriteList(use_spatial_hash=True)
         self.ground = arcade.SpriteList(use_spatial_hash=True)
+        self.crystals = arcade.SpriteList(use_spatial_hash=True)
 
-        for i in range(20):
-            for j in range(40):
+        for i in range(map.width):
+            for j in range(map.height):
                 self.ground.append(arcade.Sprite(TEXTURE_GRASS, scale = SCALE, center_x = grid_to_pixels(i) , center_y = grid_to_pixels(j)))
-                if i == 0 or j == 0 or i == 19 or j == 39: # Bordures manuelles
+                if map.get(i,j) == GridCell.Bush:
                     self.wall.append(arcade.Sprite(TEXTURE_BUSH, scale = SCALE, center_x = grid_to_pixels(i), center_y = grid_to_pixels(j)))
+                elif map.get(i,j) == GridCell.Cristal:
+                    self.crystals.append(arcade.TextureAnimationSprite(animation = ANIMATION_CRISTAUX, scale = SCALE, center_x = grid_to_pixels(i), center_y = grid_to_pixels(j)))
+                else:
+                    pass
+
 
         grass_coord = [(3,6),(7,2),(2,10),(3,8)]
 
@@ -58,12 +65,6 @@ class GameView(arcade.View):
 
         self.player_list = arcade.SpriteList()
 
-        self.crystals = arcade.SpriteList(use_spatial_hash=True)
-
-        crystals_coord = [(5,2),(6,5),(3,5)]
-
-        for x, y in crystals_coord:
-            self.crystals.append(arcade.TextureAnimationSprite(animation = ANIMATION_CRISTAUX, scale = SCALE, center_x = grid_to_pixels(x), center_y = grid_to_pixels(y)))
 
     def on_show_view(self) -> None:
         """Called automatically by 'window.show_view(game_view)' in main.py."""
@@ -95,7 +96,7 @@ class GameView(arcade.View):
             case arcade.key.DOWN:
                 self.player.change_y = - PLAYER_MOVEMENT_SPEED
             case arcade.key.SPACE:
-                self.window.show_view(GameView())
+                self.window.show_view(GameView(MAP_DECOUVERTE))
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
         match symbol:
@@ -104,11 +105,12 @@ class GameView(arcade.View):
             case arcade.key.UP | arcade.key.DOWN:
                 self.player.change_y = 0
 
+
     def on_update(self, delta_time: float) -> None:
         self.physics_engine.update() # MAJ de la position et gestion des collisions par le physics engine
         self.player.update_animation()
         self.crystals.update_animation()
-
         self.camera.position = self.player.position
+
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()

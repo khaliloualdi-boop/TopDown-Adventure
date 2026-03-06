@@ -69,3 +69,4 @@ ANIMATION_PLAYER_IDLE_DOWN: Final[arcade.TextureAnimation] = \
 
 ANIMATION_CRISTAUX: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Props_Items_(animated)/crystal_item_anim_strip_6.png", 6)
+
