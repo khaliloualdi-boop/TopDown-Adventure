@@ -6,12 +6,16 @@ class GridCell(Enum):
     Bush = "X"
     Grass = " "
     Cristal = "*"
+    SpinnerH = "s"
+    SpinnerV = "S"
 
 conversion = {
     " ": GridCell.Grass,
     "X": GridCell.Bush,
     "x": GridCell.Bush,
     "*": GridCell.Cristal,
+    "s": GridCell.SpinnerH,
+    "S": GridCell.SpinnerV,
 }
 
 @dataclass(frozen=True)

@@ -1,14 +1,41 @@
 from turtle import window_height
 from arcade.math import clamp
 from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect
+from arcade import PhysicsEngineSimple
 from typing import Final
 import arcade
+
 from map import *
 from constants import *
 from textures import *
+from spinner import *
+
+
+
 
 def grid_to_pixels(i: int) -> int:
     return i * TILE_SIZE + (TILE_SIZE // 2)
+
+class Spinner(arcade.TextureAnimationSprite):
+
+    def __init__(self, x: int, y: int, is_horizontal: bool, limits) -> None:
+
+        super().__init__(
+            animation = ANIMATION_SPINNER,
+            scale=SCALE,
+            center_x = grid_to_pixels(x),
+            center_y = grid_to_pixels(y),
+        )
+
+        self.is_horizontal = is_horizontal
+        self.limits = limits
+
+        if is_horizontal:
+            self.change_x = SPINNER_SPEED
+            self.change_y = 0
+        else:
+            self.change_x = 0
+            self.change_y = SPINNER_SPEED
 
 class GameView(arcade.View):
     """Main in-game view."""
@@ -17,45 +44,73 @@ class GameView(arcade.View):
     world_height: Final[int]
 
     player: Final[arcade.TextureAnimationSprite]
-    player_list: Final[arcade.SpriteList[arcade.TextureAnimationSprite]]
     wall: arcade.SpriteList
     ground: arcade.SpriteList
-    physics_engine: Final[arcade.PhysicsEngineSimple]
-    camera: Final[arcade.camera.Camera2D]
     crystals: arcade.SpriteList
+    spinners: arcade.SpriteList
 
+    physics_engine: Final[PhysicsEngineSimple]
+    camera: Final[arcade.camera.Camera2D]
 
 
     def __init__(self, map: Map) -> None:
-        # Magical incantion: initialize the Arcade view
         super().__init__()
 
-        # Choose a nice comfy background color
         self.background_color = arcade.csscolor.CORNFLOWER_BLUE
 
-        # Setup our game
         self.world_width = map.width * TILE_SIZE
         self.world_height = map.height * TILE_SIZE
 
+
         self.player = arcade.TextureAnimationSprite(
-            animation = ANIMATION_PLAYER_IDLE_DOWN,
-            scale=SCALE, center_x=grid_to_pixels(map.player_center_x), center_y=grid_to_pixels(map.player_center_y)
+            animation=ANIMATION_PLAYER_IDLE_DOWN,
+            scale=SCALE,
+            center_x=grid_to_pixels(map.player_center_x),
+            center_y=grid_to_pixels(map.player_center_y),
         )
         #Initialize Spritelists :
         self.wall = arcade.SpriteList(use_spatial_hash=True)
         self.ground = arcade.SpriteList(use_spatial_hash=True)
         self.crystals = arcade.SpriteList(use_spatial_hash=True)
         self.player_list = arcade.SpriteList()
+        self.spinners = arcade.SpriteList(use_spatial_hash=True)
+
 
         for i in range(map.width):
             for j in range(map.height):
-                self.ground.append(arcade.Sprite(TEXTURE_GRASS, scale = SCALE, center_x = grid_to_pixels(i) , center_y = grid_to_pixels(j)))
-                if map.get(i,j) == GridCell.Bush:
-                    self.wall.append(arcade.Sprite(TEXTURE_BUSH, scale = SCALE, center_x = grid_to_pixels(i), center_y = grid_to_pixels(j)))
-                elif map.get(i,j) == GridCell.Cristal:
-                    self.crystals.append(arcade.TextureAnimationSprite(animation = ANIMATION_CRISTAUX, scale = SCALE, center_x = grid_to_pixels(i), center_y = grid_to_pixels(j)))
-                else:
-                    pass
+
+                self.ground.append(arcade.Sprite(TEXTURE_GRASS, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j),))
+                cell = map.get(i, j)
+
+                if cell == GridCell.Bush:
+                    self.wall.append(
+                        arcade.Sprite(
+                            TEXTURE_BUSH,
+                            scale=SCALE,
+                            center_x=grid_to_pixels(i),
+                            center_y=grid_to_pixels(j),
+                        )
+                    )
+
+                elif cell == GridCell.Cristal:
+                    self.crystals.append(
+                        arcade.TextureAnimationSprite(
+                            animation=ANIMATION_CRISTAUX,
+                            scale=SCALE,
+                            center_x=grid_to_pixels(i),
+                            center_y=grid_to_pixels(j),
+                        )
+                    )
+
+                elif cell == GridCell.SpinnerH:
+                    limits = compute_horizontal_limits(map, i, j)
+                    spinner = Spinner(i, j, True, limits)
+                    self.spinners.append(spinner)
+
+                elif cell == GridCell.SpinnerV:
+                    limits = compute_vertical_limits(map, i, j)
+                    spinner = Spinner(i, j, False, limits)
+                    self.spinners.append(spinner)
 
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
@@ -66,35 +121,34 @@ class GameView(arcade.View):
 
 
     def on_show_view(self) -> None:
-        """Called automatically by 'window.show_view(game_view)' in main.py."""
-        # When we show the view, adjust the window's size to our world size.
-        # If the world size is smaller than the maximum window size, we should
-        # limit the size of the window.
         self.window.width = min(MAX_WINDOW_WIDTH, self.world_width)
         self.window.height = min(MAX_WINDOW_HEIGHT, self.world_height)
 
+
+
     def on_draw(self) -> None:
-        """Render the screen."""
-        self.clear() # always start with self.clear()
+        self.clear()
         with self.camera.activate():
             self.ground.draw()
             self.wall.draw()
             self.crystals.draw()
+            self.spinners.draw()
             arcade.draw_sprite(self.player)
 
-# Controle clavier (mouvement) :
+
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.RIGHT:
-                self.player.change_x = + PLAYER_MOVEMENT_SPEED
+                self.player.change_x = PLAYER_MOVEMENT_SPEED
             case arcade.key.LEFT:
-                self.player.change_x = - PLAYER_MOVEMENT_SPEED
+                self.player.change_x = -PLAYER_MOVEMENT_SPEED
             case arcade.key.UP:
-                self.player.change_y = + PLAYER_MOVEMENT_SPEED
+                self.player.change_y = PLAYER_MOVEMENT_SPEED
             case arcade.key.DOWN:
-                self.player.change_y = - PLAYER_MOVEMENT_SPEED
+                self.player.change_y = -PLAYER_MOVEMENT_SPEED
             case arcade.key.SPACE:
+                from main import MAP_DECOUVERTE
                 self.window.show_view(GameView(MAP_DECOUVERTE))
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
@@ -105,14 +159,46 @@ class GameView(arcade.View):
                 self.player.change_y = 0
 
 
+
     def on_update(self, delta_time: float) -> None:
-        self.physics_engine.update() # MAJ de la position et gestion des collisions par le physics engine
+
+        self.physics_engine.update()
         self.player.update_animation()
         self.crystals.update_animation()
+        self.spinners.update_animation()
         self.pan_camera_to_player(delta_time)
 
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
+
+        for spinner in self.spinners:
+
+            spinner.center_x += spinner.change_x
+            spinner.center_y += spinner.change_y
+
+            # Horizontal
+            if spinner.is_horizontal:
+                if spinner.center_x < grid_to_pixels(spinner.limits.min_pos):
+                    spinner.center_x = grid_to_pixels(spinner.limits.min_pos)
+                    spinner.change_x *= -1
+
+                if spinner.center_x > grid_to_pixels(spinner.limits.max_pos):
+                    spinner.center_x = grid_to_pixels(spinner.limits.max_pos)
+                    spinner.change_x *= -1
+
+            # Vertical
+            else:
+                if spinner.center_y < grid_to_pixels(spinner.limits.min_pos):
+                    spinner.center_y = grid_to_pixels(spinner.limits.min_pos)
+                    spinner.change_y *= -1
+
+                if spinner.center_y > grid_to_pixels(spinner.limits.max_pos):
+                    spinner.center_y = grid_to_pixels(spinner.limits.max_pos)
+                    spinner.change_y *= -1
+
+        if arcade.check_for_collision_with_list(self.player, self.spinners):
+            from main import MAP_DECOUVERTE
+            self.window.show_view(GameView(MAP_DECOUVERTE))
 
     def pan_camera_to_player(self, delta_time: float) -> None:
         dead_zone_width = self.camera.width*0.4
