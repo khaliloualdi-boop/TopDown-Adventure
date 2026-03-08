@@ -1,4 +1,6 @@
-from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList
+from turtle import window_height
+from arcade.math import clamp
+from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect
 from typing import Final
 import arcade
 from map import *
@@ -23,6 +25,7 @@ class GameView(arcade.View):
     crystals: arcade.SpriteList
 
 
+
     def __init__(self, map: Map) -> None:
         # Magical incantion: initialize the Arcade view
         super().__init__()
@@ -38,10 +41,11 @@ class GameView(arcade.View):
             animation = ANIMATION_PLAYER_IDLE_DOWN,
             scale=SCALE, center_x=grid_to_pixels(map.player_center_x), center_y=grid_to_pixels(map.player_center_y)
         )
-
+        #Initialize Spritelists :
         self.wall = arcade.SpriteList(use_spatial_hash=True)
         self.ground = arcade.SpriteList(use_spatial_hash=True)
         self.crystals = arcade.SpriteList(use_spatial_hash=True)
+        self.player_list = arcade.SpriteList()
 
         for i in range(map.width):
             for j in range(map.height):
@@ -53,17 +57,12 @@ class GameView(arcade.View):
                 else:
                     pass
 
-
-        grass_coord = [(3,6),(7,2),(2,10),(3,8)]
-
-        for x, y in grass_coord:
-            self.wall.append(arcade.Sprite(TEXTURE_BUSH, scale = SCALE, center_x = grid_to_pixels(x), center_y = grid_to_pixels(y)))
-
+        # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
 
+        #Camera :
         self.camera = arcade.camera.Camera2D()
 
-        self.player_list = arcade.SpriteList()
 
 
     def on_show_view(self) -> None:
@@ -110,7 +109,33 @@ class GameView(arcade.View):
         self.physics_engine.update() # MAJ de la position et gestion des collisions par le physics engine
         self.player.update_animation()
         self.crystals.update_animation()
-        self.camera.position = self.player.position
+        self.pan_camera_to_player(delta_time)
 
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
+
+    def pan_camera_to_player(self, delta_time: float) -> None:
+        dead_zone_width = self.camera.width*0.4
+        dead_zone_height = self.camera.height*0.4
+        dead_zone_right = self.camera.position.x + dead_zone_width/2
+        dead_zone_left = self.camera.position.x - dead_zone_width/2
+        dead_zone_top = self.camera.position.y + dead_zone_height/2
+        dead_zone_bottom = self.camera.position.y - dead_zone_height/2
+
+        target_x : float = self.camera.position.x
+        target_y : float = self.camera.position.y
+
+        if self.player.center_x < dead_zone_left:
+            target_x -= dead_zone_left - self.player.center_x
+        elif self.player.center_x > dead_zone_right:
+            target_x += self.player.center_x - dead_zone_right
+
+        if self.player.center_y < dead_zone_bottom:
+            target_y -= dead_zone_bottom - self.player.center_y
+        elif self.player.center_y > dead_zone_top:
+            target_y += self.player.center_y - dead_zone_top
+
+        target_x = clamp(target_x, MAX_WINDOW_WIDTH/2, self.world_width - (MAX_WINDOW_WIDTH/2))
+        target_y = clamp(target_y, MAX_WINDOW_HEIGHT/2, self.world_height - (MAX_WINDOW_HEIGHT/2))
+        next_pos = (target_x, target_y)
+        self.camera.position = arcade.math.lerp_2d(self.camera.position, next_pos, delta_time * 6)
