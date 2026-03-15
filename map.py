@@ -8,6 +8,7 @@ class GridCell(Enum):
     Cristal = "*"
     SpinnerH = "s"
     SpinnerV = "S"
+    Hole = "O"
 
 conversion = {
     " ": GridCell.Grass,
@@ -16,6 +17,7 @@ conversion = {
     "*": GridCell.Cristal,
     "s": GridCell.SpinnerH,
     "S": GridCell.SpinnerV,
+    "O": GridCell.Hole,
 }
 
 @dataclass(frozen=True)

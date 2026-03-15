@@ -74,6 +74,8 @@ class GameView(arcade.View):
         self.crystals = arcade.SpriteList(use_spatial_hash=True)
         self.player_list = arcade.SpriteList()
         self.spinners = arcade.SpriteList(use_spatial_hash=True)
+        self.holes = arcade.SpriteList(use_spatial_hash=True)
+
 
 
         for i in range(map.width):
@@ -112,12 +114,28 @@ class GameView(arcade.View):
                     spinner = Spinner(i, j, False, limits)
                     self.spinners.append(spinner)
 
+                elif cell == GridCell.Hole:
+                    self.holes.append(
+                    arcade.Sprite(
+                    TEXTURE_HOLE,
+                    scale=SCALE,
+                    center_x=grid_to_pixels(i),
+                    center_y=grid_to_pixels(j),
+                    )
+                )
+
+
+
+
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
 
-        #Camera :
+        #Cameras :
         self.camera = arcade.camera.Camera2D()
+        self.ui_camera = arcade.camera.Camera2D()
 
+        #Score :
+        self.score = 0
 
 
     def on_show_view(self) -> None:
@@ -130,10 +148,13 @@ class GameView(arcade.View):
         self.clear()
         with self.camera.activate():
             self.ground.draw()
+            self.holes.draw()
             self.wall.draw()
             self.crystals.draw()
             self.spinners.draw()
             arcade.draw_sprite(self.player)
+        with self.ui_camera.activate():
+            arcade.Text(text=f"Score : {self.score}",x=10,y=self.window.height - 30,color=arcade.color.WHITE,font_size=20).draw()
 
 
 
@@ -170,6 +191,7 @@ class GameView(arcade.View):
 
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
+            self.score += 1
 
         for spinner in self.spinners:
 
@@ -199,6 +221,11 @@ class GameView(arcade.View):
         if arcade.check_for_collision_with_list(self.player, self.spinners):
             from main import MAP_DECOUVERTE
             self.window.show_view(GameView(MAP_DECOUVERTE))
+        for hole in self.holes:
+            distance = arcade.math.get_distance(self.player.center_x,self.player.center_y,hole.center_x,hole.center_y,)
+            if distance <= 16:
+                from main import MAP_DECOUVERTE
+                self.window.show_view(GameView(MAP_DECOUVERTE))
 
     def pan_camera_to_player(self, delta_time: float) -> None:
         dead_zone_width = self.camera.width*0.4

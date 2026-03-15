@@ -13,13 +13,11 @@ def compute_horizontal_limits(game_map: Map, x: int, y: int) -> SpinnerLimits:
     """
     Calcule les limites gauche/droite d’un spinner horizontal.
     """
-
-    # gauche
+    
     left = x
     while left - 1 >= 0 and game_map.get(left - 1, y) != GridCell.Bush:
         left -= 1
 
-    # droite
     right = x
     while right + 1 < game_map.width and game_map.get(right + 1, y) != GridCell.Bush:
         right += 1

@@ -1,3 +1,4 @@
+from arcade.examples.particle_fireworks import TEXTURE
 from typing import Final
 import arcade
 
@@ -63,6 +64,7 @@ _overworld_grid = _load_grid("assets/Top_Down_Adventure_Pack_v.1.0/Overworld_Til
 
 TEXTURE_GRASS: Final[arcade.Texture] = _overworld_grid[18*1 + 6]
 TEXTURE_BUSH: Final[arcade.Texture] = _overworld_grid[18*3 + 5]
+TEXTURE_HOLE: Final[arcade.Texture] = _overworld_grid[18*4 + 8]
 
 ANIMATION_PLAYER_IDLE_DOWN: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_idle_down_anim_strip_6.png", 6)
@@ -72,3 +74,4 @@ ANIMATION_CRISTAUX: Final[arcade.TextureAnimation] = \
 
 ANIMATION_SPINNER: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Spinner_Sprites/spinner_run_attack_anim_all_dir_strip_8.png", 3)
+
