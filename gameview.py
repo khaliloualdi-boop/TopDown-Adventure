@@ -8,6 +8,7 @@ from map import *
 from constants import *
 from textures import *
 from spinner import *
+from player import *
 
 
 def grid_to_pixels(i: int) -> int:
@@ -34,15 +35,6 @@ class Spinner(arcade.TextureAnimationSprite):
             self.change_x = 0
             self.change_y = SPINNER_SPEED
 
-class Player(arcade.TextureAnimationSprite):
-
-    Direction: str
-
-    def __init__(self, animation: arcade.TextureAnimation, scale: float, center_x: int, center_y: int) -> None:
-        super().__init__(center_x, center_y, scale, animation)
-        Direction = "south"
-
-
 
 class GameView(arcade.View):
     """Main in-game view."""
@@ -50,7 +42,7 @@ class GameView(arcade.View):
     world_width: Final[int]
     world_height: Final[int]
 
-    player: Final[arcade.TextureAnimationSprite]
+    player: Player
     wall: arcade.SpriteList
     ground: arcade.SpriteList
     crystals: arcade.SpriteList
@@ -69,12 +61,13 @@ class GameView(arcade.View):
         self.world_height = map.height * TILE_SIZE
 
 
-        self.player = arcade.TextureAnimationSprite(
-            animation=ANIMATION_PLAYER_IDLE_DOWN,
-            scale=SCALE,
-            center_x=grid_to_pixels(map.player_center_x),
-            center_y=grid_to_pixels(map.player_center_y),
+        self.player = Player(
+            ANIMATION_PLAYER_IDLE_DOWN,
+            SCALE,
+            grid_to_pixels(map.player_center_x),
+            grid_to_pixels(map.player_center_y),
         )
+
         #Initialize Spritelists :
         self.wall = arcade.SpriteList(use_spatial_hash=True)
         self.ground = arcade.SpriteList(use_spatial_hash=True)
@@ -165,24 +158,13 @@ class GameView(arcade.View):
 
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        match symbol:
-            case arcade.key.RIGHT:
-                self.player.change_x = PLAYER_MOVEMENT_SPEED
-            case arcade.key.LEFT:
-                self.player.change_x = -PLAYER_MOVEMENT_SPEED
-            case arcade.key.UP:
-                self.player.change_y = PLAYER_MOVEMENT_SPEED
-            case arcade.key.DOWN:
-                self.player.change_y = -PLAYER_MOVEMENT_SPEED
-            case arcade.key.SPACE:
-                self.window.show_view(GameView(MAP_DECOUVERTE))
+        if symbol == arcade.key.SPACE:
+            self.window.show_view(GameView(MAP_DECOUVERTE))
+        else:
+            self.player.on_key_press(symbol, modifiers)
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
-        match symbol:
-            case arcade.key.RIGHT | arcade.key.LEFT:
-                self.player.change_x = 0
-            case arcade.key.UP | arcade.key.DOWN:
-                self.player.change_y = 0
+        self.player.on_key_release(symbol, modifiers)
 
 
 

@@ -1,43 +1,80 @@
 from constants import *
 from textures import *
 from pycparser.c_ast import Enum
+from typing import Final
 import arcade
 
 
 class Direction (Enum):
     SUD = 0
     NORD = 1
-    OUEST = 2
-    EST = 3
+    EST = 2
+    OUEST = 3
 
-class player(arcade.TextureAnimationSprite):
-    __direction: int
-    player_animation_list: Final[arcade.SpriteList]
+class Player(arcade.TextureAnimationSprite):
+    player_animation_list: Final[list[arcade.TextureAnimation]]
+    pressed_keys: set[int]
+    horizontal_stack: list[int]
+    vertical_stack: list[int]
 
-    def __init__(self, animation: arcade.TextureAnimation, scale: float, center_x: int, center_y: int) -> None:
-        super().__init__(center_x, center_y, scale, animation)
+    def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int, Center_y: int) -> None:
+        super().__init__(animation = Anim, scale = Scale, center_x = Center_x, center_y = Center_y)
         self.__direction = Direction.SUD
-        self.player_animation_list = arcade.SpriteList()
-        self.player_animation_list.extend([arcade.TextureAnimationSprite(animation = ANIMATION_PLAYER_IDLE_DOWN, scale = SCALE, center_x = self.center_x, center_y = self.center_y), arcade.TextureAnimationSprite(animation = ANIMATION_PLAYER_IDLE_UP, scale = SCALE, center_x = self.center_x, center_y = self.center_y), arcade.TextureAnimationSprite(animation = ANIMATION_PLAYER_IDLE_RIGHT, scale = SCALE, center_x = self.center_x, center_y = self.center_y), arcade.TextureAnimationSprite(animation = ANIMATION_PLAYER_IDLE_LEFT, scale = SCALE, center_x = self.center_x, center_y = self.center_y)])
-
-    def updt(self) -> None:
-        ...
+        self.player_animation_list = [ANIMATION_PLAYER_IDLE_DOWN, ANIMATION_PLAYER_IDLE_UP, ANIMATION_PLAYER_IDLE_RIGHT, ANIMATION_PLAYER_IDLE_LEFT]
+        self.pressed_keys = set()
+        self.horizontal_stack = []
+        self.vertical_stack = []
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
+        self.pressed_keys.add(symbol)
         match symbol:
-            case arcade.key.RIGHT:
-                self.change_x = PLAYER_MOVEMENT_SPEED
-                self.animation = self.player_animation_list[Direction.EST]
-            case arcade.key.LEFT:
-                self.change_x = - PLAYER_MOVEMENT_SPEED
-                self.animation = self.player_animation_list[Direction.OUEST]
-            case arcade.key.UP:
-                self.change_y = PLAYER_MOVEMENT_SPEED
-                self.animation = self.player_animation_list[Direction.NORD]
-            case arcade.key.DOWN:
-                self.change_y = - PLAYER_MOVEMENT_SPEED
-                self.animation = self.player_animation_list[Direction.SUD]
+            case arcade.key.RIGHT | arcade.key.LEFT:
+                if symbol in self.horizontal_stack:
+                    self.horizontal_stack.remove(symbol)
+                self.horizontal_stack.append(symbol)
+            case arcade.key.UP | arcade.key.DOWN:
+                if symbol in self.vertical_stack:
+                    self.vertical_stack.remove(symbol)
+                self.vertical_stack.append(symbol)
 
-    @property
-    def get_direction(self) -> int:
-        return self.__direction
+        self.updt_movement()
+        self.updt_animation()
+
+    def on_key_release(self, symbol: int, modifiers: int) -> None:
+        self.pressed_keys.discard(symbol)
+        if symbol in self.horizontal_stack:
+            self.horizontal_stack.remove(symbol)
+        if  symbol in self.vertical_stack:
+            self.vertical_stack.remove(symbol)
+
+        self.updt_movement()
+        self.updt_animation()
+
+    def updt_movement(self) -> None:
+        if self.horizontal_stack: #check si la liste est vide
+            horz = self.horizontal_stack[-1] #last element
+            if horz == arcade.key.RIGHT:
+                self.change_x = PLAYER_MOVEMENT_SPEED
+            else:
+                self.change_x = - PLAYER_MOVEMENT_SPEED
+        else:
+            self.change_x = 0
+
+        if self.vertical_stack:
+            vert = self.vertical_stack[-1]
+            if vert == arcade.key.UP:
+                self.change_y = PLAYER_MOVEMENT_SPEED
+            else:
+                self.change_y = - PLAYER_MOVEMENT_SPEED
+        else:
+            self.change_y = 0
+
+    def updt_animation(self) -> None:
+        if self.change_y > 0:
+            self.animation = self.player_animation_list[Direction.NORD]
+        elif self.change_y < 0:
+            self.animation = self.player_animation_list[Direction.SUD]
+        elif self.change_x > 0:
+            self.animation = self.player_animation_list[Direction.EST]
+        elif self.change_x < 0:
+            self.animation = self.player_animation_list[Direction.OUEST]
