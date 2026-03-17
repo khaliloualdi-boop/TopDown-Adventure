@@ -12,8 +12,8 @@ x            xxxxxxxxxx        x       x
 x         *                    x   *   x
 x      S              S     *  x       x
 x  *            *                      x
-x                                      x
+x  O O                                 x
 x     xx     s        xs               x
-x  P      *           x       *        x
+x  P    O *           x       *        x
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ---
