@@ -1,16 +1,13 @@
-from turtle import window_height
+from pygments.token import String
+from turtle import window_height, left
 from arcade.math import clamp
-from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect
-from arcade import PhysicsEngineSimple
+from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect, TextureAnimation
 from typing import Final
 import arcade
-
 from map import *
 from constants import *
 from textures import *
 from spinner import *
-
-
 
 
 def grid_to_pixels(i: int) -> int:
@@ -18,11 +15,11 @@ def grid_to_pixels(i: int) -> int:
 
 class Spinner(arcade.TextureAnimationSprite):
 
-    def __init__(self, x: int, y: int, is_horizontal: bool, limits) -> None:
+    def __init__(self, x: int, y: int, is_horizontal: bool, limits: SpinnerLimits) -> None:
 
         super().__init__(
             animation = ANIMATION_SPINNER,
-            scale=SCALE,
+            scale = SCALE,
             center_x = grid_to_pixels(x),
             center_y = grid_to_pixels(y),
         )
@@ -36,6 +33,16 @@ class Spinner(arcade.TextureAnimationSprite):
         else:
             self.change_x = 0
             self.change_y = SPINNER_SPEED
+
+class Player(arcade.TextureAnimationSprite):
+
+    Direction: str
+
+    def __init__(self, animation: arcade.TextureAnimation, scale: float, center_x: int, center_y: int) -> None:
+        super().__init__(center_x, center_y, scale, animation)
+        Direction = "south"
+
+
 
 class GameView(arcade.View):
     """Main in-game view."""
@@ -118,8 +125,6 @@ class GameView(arcade.View):
         #Camera :
         self.camera = arcade.camera.Camera2D()
 
-
-
     def on_show_view(self) -> None:
         self.window.width = min(MAX_WINDOW_WIDTH, self.world_width)
         self.window.height = min(MAX_WINDOW_HEIGHT, self.world_height)
@@ -136,7 +141,6 @@ class GameView(arcade.View):
             arcade.draw_sprite(self.player)
 
 
-
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         match symbol:
             case arcade.key.RIGHT:
@@ -148,7 +152,6 @@ class GameView(arcade.View):
             case arcade.key.DOWN:
                 self.player.change_y = -PLAYER_MOVEMENT_SPEED
             case arcade.key.SPACE:
-                from main import MAP_DECOUVERTE
                 self.window.show_view(GameView(MAP_DECOUVERTE))
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
@@ -166,7 +169,6 @@ class GameView(arcade.View):
         self.player.update_animation()
         self.crystals.update_animation()
         self.spinners.update_animation()
-        self.pan_camera_to_player(delta_time)
 
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
@@ -197,8 +199,9 @@ class GameView(arcade.View):
                     spinner.change_y *= -1
 
         if arcade.check_for_collision_with_list(self.player, self.spinners):
-            from main import MAP_DECOUVERTE
             self.window.show_view(GameView(MAP_DECOUVERTE))
+
+        self.pan_camera_to_player(delta_time)
 
     def pan_camera_to_player(self, delta_time: float) -> None:
         dead_zone_width = self.camera.width*0.4

@@ -59,17 +59,14 @@ def map_extract(doc: str) -> Map:
     lines = [line for line in lines if line.strip() and line.strip() != "---"]
 
     if len(lines) != height:
-        raise Exception(
-            f"Format de carte invalide : nombre de ligne attendu : {height} nombre obtenu : {len(lines)}."
-        )
+        raise Exception(f"Format de carte invalide : nombre de ligne attendu : {height} nombre obtenu : {len(lines)}.")
 
     for y, line in enumerate(lines):
         if len(line) != width:
-            raise Exception(
-                f"Format de carte invalide : largeur attendue {width} sur la ligne {y}, obtenue {len(line)}."
-            )
+            raise Exception(f"Format de carte invalide : largeur attendue {width} sur la ligne {y}, obtenue {len(line)}.")
 
         characters: list[GridCell] = []
+
         for x, char in enumerate(line):
             if char == "P":
                 player_center_x, player_center_y = x, height - 1 - y
