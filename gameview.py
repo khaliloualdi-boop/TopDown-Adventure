@@ -9,6 +9,7 @@ from constants import *
 from textures import *
 from spinner import *
 from player import *
+from boomerang import *
 
 
 def grid_to_pixels(i: int) -> int:
@@ -43,6 +44,7 @@ class GameView(arcade.View):
     world_height: Final[int]
 
     player: Player
+    boomerang: Boomerang
     wall: arcade.SpriteList
     ground: arcade.SpriteList
     crystals: arcade.SpriteList
@@ -68,6 +70,14 @@ class GameView(arcade.View):
             grid_to_pixels(map.player_center_y),
         )
 
+        self.boomerang = Boomerang(
+            ANIMATION_BOOMERANG,
+            SCALE,
+            grid_to_pixels(map.player_center_x),
+            grid_to_pixels(map.player_center_y),
+            self.player
+        )
+
         #Initialize Spritelists :
         self.wall = arcade.SpriteList(use_spatial_hash=True)
         self.ground = arcade.SpriteList(use_spatial_hash=True)
@@ -75,8 +85,6 @@ class GameView(arcade.View):
         self.player_list = arcade.SpriteList()
         self.spinners = arcade.SpriteList(use_spatial_hash=True)
         self.holes = arcade.SpriteList(use_spatial_hash=True)
-
-
 
         for i in range(map.width):
             for j in range(map.height):
@@ -124,9 +132,6 @@ class GameView(arcade.View):
                     )
                 )
 
-
-
-
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
 
@@ -153,6 +158,8 @@ class GameView(arcade.View):
             self.crystals.draw()
             self.spinners.draw()
             arcade.draw_sprite(self.player)
+            if self.boomerang.is_active:
+                arcade.draw_sprite(self.boomerang)
         with self.ui_camera.activate():
             arcade.Text(text=f"Score : {self.score}",x=10,y=self.window.height - 30,color=arcade.color.WHITE,font_size=20).draw()
 
@@ -160,6 +167,8 @@ class GameView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         if symbol == arcade.key.SPACE:
             self.window.show_view(GameView(MAP_DECOUVERTE))
+        elif symbol == arcade.key.D:
+            self.boomerang.launch()
         else:
             self.player.on_key_press(symbol, modifiers)
 
@@ -174,6 +183,8 @@ class GameView(arcade.View):
         self.player.update_animation()
         self.crystals.update_animation()
         self.spinners.update_animation()
+        self.boomerang.update_boomerang()
+        self.boomerang.update_animation()
 
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
@@ -206,9 +217,20 @@ class GameView(arcade.View):
 
         if arcade.check_for_collision_with_list(self.player, self.spinners):
             self.window.show_view(GameView(MAP_DECOUVERTE))
+
+        for spinner in arcade.check_for_collision_with_list(self.boomerang, self.spinners):
+            if self.boomerang.state == BoomerangState.launching:
+                self.spinners.remove(spinner)
+                self.boomerang.start_returning()
+            else:
+                self.spinners.remove(spinner)
+
+        for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
+            self.boomerang.start_returning()
+
         for hole in self.holes:
             distance = arcade.math.get_distance(self.player.center_x,self.player.center_y,hole.center_x,hole.center_y,)
-            if distance <= 16:
+            if distance <= 20:
                 self.window.show_view(GameView(MAP_DECOUVERTE))
 
         self.pan_camera_to_player(delta_time)

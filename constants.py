@@ -14,3 +14,5 @@ PLAYER_MOVEMENT_SPEED = 4
 """Vitesse du joueur en pixel par frames."""
 
 SPINNER_SPEED = 3
+
+BOOMERANG_SPEED = 8

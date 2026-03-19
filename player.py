@@ -1,6 +1,8 @@
+from math import sqrt
+from arcade import Vec2
 from constants import *
 from textures import *
-from pycparser.c_ast import Enum
+from enum import Enum
 from typing import Final
 import arcade
 
@@ -12,6 +14,7 @@ class Direction (Enum):
     OUEST = 3
 
 class Player(arcade.TextureAnimationSprite):
+    __direction: Direction
     player_animation_list: Final[list[arcade.TextureAnimation]]
     pressed_keys: set[int]
     horizontal_stack: list[int]
@@ -20,7 +23,16 @@ class Player(arcade.TextureAnimationSprite):
     def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int, Center_y: int) -> None:
         super().__init__(animation = Anim, scale = Scale, center_x = Center_x, center_y = Center_y)
         self.__direction = Direction.SUD
-        self.player_animation_list = [ANIMATION_PLAYER_IDLE_DOWN, ANIMATION_PLAYER_IDLE_UP, ANIMATION_PLAYER_IDLE_RIGHT, ANIMATION_PLAYER_IDLE_LEFT]
+        self.player_animation_list = [
+            ANIMATION_PLAYER_IDLE_DOWN,
+            ANIMATION_PLAYER_IDLE_UP,
+            ANIMATION_PLAYER_IDLE_RIGHT,
+            ANIMATION_PLAYER_IDLE_LEFT,
+            ANIMATION_PLAYER_RUN_DOWN,
+            ANIMATION_PLAYER_RUN_UP,
+            ANIMATION_PLAYER_RUN_RIGHT,
+            ANIMATION_PLAYER_RUN_LEFT
+            ]
         self.pressed_keys = set()
         self.horizontal_stack = []
         self.vertical_stack = []
@@ -51,7 +63,7 @@ class Player(arcade.TextureAnimationSprite):
         self.updt_animation()
 
     def updt_movement(self) -> None:
-        if self.horizontal_stack: #check si la liste est vide
+        if self.horizontal_stack: #check si la liste est non vide
             horz = self.horizontal_stack[-1] #last element
             if horz == arcade.key.RIGHT:
                 self.change_x = PLAYER_MOVEMENT_SPEED
@@ -71,10 +83,20 @@ class Player(arcade.TextureAnimationSprite):
 
     def updt_animation(self) -> None:
         if self.change_y > 0:
-            self.animation = self.player_animation_list[Direction.NORD]
+            self.animation = self.player_animation_list[Direction.NORD.value + 4]
+            self.__direction = Direction.NORD
         elif self.change_y < 0:
-            self.animation = self.player_animation_list[Direction.SUD]
+            self.animation = self.player_animation_list[Direction.SUD.value + 4]
+            self.__direction = Direction.SUD
         elif self.change_x > 0:
-            self.animation = self.player_animation_list[Direction.EST]
+            self.animation = self.player_animation_list[Direction.EST.value + 4]
+            self.__direction = Direction.EST
         elif self.change_x < 0:
-            self.animation = self.player_animation_list[Direction.OUEST]
+            self.animation = self.player_animation_list[Direction.OUEST.value + 4]
+            self.__direction = Direction.OUEST
+        else:
+            self.animation = self.player_animation_list[self.__direction.value]
+
+    @property
+    def direction(self) -> Direction:
+        return self.__direction
