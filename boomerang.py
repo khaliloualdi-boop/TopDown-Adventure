@@ -1,4 +1,4 @@
-import spinner
+from math import sqrt
 from enum import Enum
 import arcade
 from constants import *

@@ -1,4 +1,4 @@
-from pygments.token import String
+
 from turtle import window_height, left
 from arcade.math import clamp
 from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect, TextureAnimation
@@ -10,12 +10,14 @@ from textures import *
 from spinner import *
 from player import *
 from boomerang import *
+from bat import *
+from monster import Monster
 
 
 def grid_to_pixels(i: int) -> int:
     return i * TILE_SIZE + (TILE_SIZE // 2)
 
-class Spinner(arcade.TextureAnimationSprite):
+class Spinner(Monster):
 
     def __init__(self, x: int, y: int, is_horizontal: bool, limits: SpinnerLimits) -> None:
 
@@ -36,6 +38,28 @@ class Spinner(arcade.TextureAnimationSprite):
             self.change_x = 0
             self.change_y = SPINNER_SPEED
 
+    def update_monster(self) -> None:
+        self.center_x += self.change_x
+        self.center_y += self.change_y
+
+        if self.is_horizontal:
+            if self.center_x < grid_to_pixels(self.limits.min_pos):
+                self.center_x = grid_to_pixels(self.limits.min_pos)
+                self.change_x *= -1
+
+            if self.center_x > grid_to_pixels(self.limits.max_pos):
+                self.center_x = grid_to_pixels(self.limits.max_pos)
+                self.change_x *= -1
+
+        else:
+            if self.center_y < grid_to_pixels(self.limits.min_pos):
+                self.center_y = grid_to_pixels(self.limits.min_pos)
+                self.change_y *= -1
+
+            if self.center_y > grid_to_pixels(self.limits.max_pos):
+                self.center_y = grid_to_pixels(self.limits.max_pos)
+                self.change_y *= -1
+
 
 class GameView(arcade.View):
     """Main in-game view."""
@@ -48,7 +72,6 @@ class GameView(arcade.View):
     wall: arcade.SpriteList
     ground: arcade.SpriteList
     crystals: arcade.SpriteList
-    spinners: arcade.SpriteList
 
     physics_engine: Final[PhysicsEngineSimple]
     camera: Final[arcade.camera.Camera2D]
@@ -83,8 +106,9 @@ class GameView(arcade.View):
         self.ground = arcade.SpriteList(use_spatial_hash=True)
         self.crystals = arcade.SpriteList(use_spatial_hash=True)
         self.player_list = arcade.SpriteList()
-        self.spinners = arcade.SpriteList(use_spatial_hash=True)
+        self.monsters = arcade.SpriteList(use_spatial_hash=True)
         self.holes = arcade.SpriteList(use_spatial_hash=True)
+       
 
         for i in range(map.width):
             for j in range(map.height):
@@ -115,22 +139,21 @@ class GameView(arcade.View):
                 elif cell == GridCell.SpinnerH:
                     limits = compute_horizontal_limits(map, i, j)
                     spinner = Spinner(i, j, True, limits)
-                    self.spinners.append(spinner)
+                    self.monsters.append(spinner)
 
                 elif cell == GridCell.SpinnerV:
                     limits = compute_vertical_limits(map, i, j)
                     spinner = Spinner(i, j, False, limits)
-                    self.spinners.append(spinner)
+                    self.monsters.append(spinner)
 
                 elif cell == GridCell.Hole:
                     self.holes.append(
-                    arcade.Sprite(
-                    TEXTURE_HOLE,
-                    scale=SCALE,
-                    center_x=grid_to_pixels(i),
-                    center_y=grid_to_pixels(j),
-                    )
-                )
+                        arcade.Sprite(TEXTURE_HOLE, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j),
+                        )
+                    )             
+                elif cell == GridCell.Bat:
+                    bat = Bat(grid_to_pixels(i),grid_to_pixels(j),ANIMATION_BAT)
+                    self.monsters.append(bat)
 
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
@@ -156,7 +179,7 @@ class GameView(arcade.View):
             self.holes.draw()
             self.wall.draw()
             self.crystals.draw()
-            self.spinners.draw()
+            self.monsters.draw()
             arcade.draw_sprite(self.player)
             if self.boomerang.is_active:
                 arcade.draw_sprite(self.boomerang)
@@ -182,48 +205,24 @@ class GameView(arcade.View):
         self.physics_engine.update()
         self.player.update_animation()
         self.crystals.update_animation()
-        self.spinners.update_animation()
+
         self.boomerang.update_boomerang()
         self.boomerang.update_animation()
 
+        for monster in self.monsters:
+            monster.update_monster()
+            monster.update_animation()
+            
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
             self.score += 1
 
-        for spinner in self.spinners:
-
-            spinner.center_x += spinner.change_x
-            spinner.center_y += spinner.change_y
-
-            # Horizontal
-            if spinner.is_horizontal:
-                if spinner.center_x < grid_to_pixels(spinner.limits.min_pos):
-                    spinner.center_x = grid_to_pixels(spinner.limits.min_pos)
-                    spinner.change_x *= -1
-
-                if spinner.center_x > grid_to_pixels(spinner.limits.max_pos):
-                    spinner.center_x = grid_to_pixels(spinner.limits.max_pos)
-                    spinner.change_x *= -1
-
-            # Vertical
-            else:
-                if spinner.center_y < grid_to_pixels(spinner.limits.min_pos):
-                    spinner.center_y = grid_to_pixels(spinner.limits.min_pos)
-                    spinner.change_y *= -1
-
-                if spinner.center_y > grid_to_pixels(spinner.limits.max_pos):
-                    spinner.center_y = grid_to_pixels(spinner.limits.max_pos)
-                    spinner.change_y *= -1
-
-        if arcade.check_for_collision_with_list(self.player, self.spinners):
+        
+        if arcade.check_for_collision_with_list(self.player, self.monsters):
             self.window.show_view(GameView(MAP_DECOUVERTE))
 
-        for spinner in arcade.check_for_collision_with_list(self.boomerang, self.spinners):
-            if self.boomerang.state == BoomerangState.launching:
-                self.spinners.remove(spinner)
-                self.boomerang.start_returning()
-            else:
-                self.spinners.remove(spinner)
+        for monster in arcade.check_for_collision_with_list(self.boomerang, self.monsters):
+            self.monsters.remove(monster)
 
         for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
             self.boomerang.start_returning()
@@ -232,6 +231,7 @@ class GameView(arcade.View):
             distance = arcade.math.get_distance(self.player.center_x,self.player.center_y,hole.center_x,hole.center_y,)
             if distance <= 20:
                 self.window.show_view(GameView(MAP_DECOUVERTE))
+
 
         self.pan_camera_to_player(delta_time)
 
