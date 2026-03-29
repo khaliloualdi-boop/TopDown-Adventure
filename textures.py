@@ -80,6 +80,14 @@ ANIMATION_PLAYER_IDLE_RIGHT: Final[arcade.TextureAnimation] = \
 ANIMATION_PLAYER_IDLE_LEFT: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_idle_left_anim_strip_6.png", 6)
 
+IDLE_SPRITELIST = [
+    ANIMATION_PLAYER_IDLE_DOWN,
+    ANIMATION_PLAYER_IDLE_UP,
+    ANIMATION_PLAYER_IDLE_RIGHT,
+    ANIMATION_PLAYER_IDLE_LEFT
+]
+
+
 ANIMATION_CRISTAUX: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Props_Items_(animated)/crystal_item_anim_strip_6.png", 6)
 
@@ -97,8 +105,32 @@ ANIMATION_PLAYER_RUN_LEFT: Final[arcade.TextureAnimation] = \
 ANIMATION_SPINNER: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Spinner_Sprites/spinner_run_attack_anim_all_dir_strip_8.png", 3)
 
+RUNNING_SPRITELIST = [
+    ANIMATION_PLAYER_RUN_DOWN,
+    ANIMATION_PLAYER_RUN_UP,
+    ANIMATION_PLAYER_RUN_RIGHT,
+    ANIMATION_PLAYER_RUN_LEFT
+]
+
 ANIMATION_BOOMERANG: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/provided/boomerang-sheet.png", 8, 25)
 
 ANIMATION_BAT: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkbat_Sprites/pinkbat_idle_left_anim_strip_5.png", 5)
+# Sword attack animation:
+
+ANIMATION_PLAYER_ATTACK_DOWN:Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_down_anim_strip_6.png", 6, 50, (48,48))
+ANIMATION_PLAYER_ATTACK_UP:Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_up_anim_strip_6.png",6 ,50,(48,48))
+ANIMATION_PLAYER_ATTACK_RIGHT:Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_right_anim_strip_6.png",6 ,50, (48,48))
+ANIMATION_PLAYER_ATTACK_LEFT:Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_left_anim_strip_6.png",6, 50, (48,48))
+
+SWORD_ATTACK_LIST = [
+    ANIMATION_PLAYER_ATTACK_DOWN,
+    ANIMATION_PLAYER_ATTACK_UP,
+    ANIMATION_PLAYER_ATTACK_RIGHT,
+    ANIMATION_PLAYER_ATTACK_LEFT
+]
