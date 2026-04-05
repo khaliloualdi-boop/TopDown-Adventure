@@ -65,7 +65,8 @@ _overworld_grid = _load_grid("assets/Top_Down_Adventure_Pack_v.1.0/Overworld_Til
 TEXTURE_GRASS: Final[arcade.Texture] = _overworld_grid[18*1 + 6]
 TEXTURE_BUSH: Final[arcade.Texture] = _overworld_grid[18*3 + 5]
 TEXTURE_HOLE: Final[arcade.Texture] = _overworld_grid[18*4 + 8]
-
+TEXTURE_GATE_OPEN = _overworld_grid[13*8 + 4]
+TEXTURE_GATE_CLOSED = _overworld_grid[13*8 + 7]
 # Idle animations :
 
 ANIMATION_PLAYER_IDLE_DOWN: Final[arcade.TextureAnimation] = \

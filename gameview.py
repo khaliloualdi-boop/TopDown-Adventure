@@ -12,6 +12,8 @@ from player import *
 from boomerang import *
 from bat import *
 from monster import Monster
+from switch import Switch
+from gate import Gate
 
 
 def grid_to_pixels(i: int) -> int:
@@ -108,7 +110,8 @@ class GameView(arcade.View):
         self.player_list = arcade.SpriteList()
         self.monsters = arcade.SpriteList(use_spatial_hash=True)
         self.holes = arcade.SpriteList(use_spatial_hash=True)
-       
+        self.switches = arcade.SpriteList(use_spatial_hash=True)
+        self.gates = arcade.SpriteList(use_spatial_hash=True)
 
         for i in range(map.width):
             for j in range(map.height):
@@ -154,6 +157,31 @@ class GameView(arcade.View):
                 elif cell == GridCell.Bat:
                     bat = Bat(grid_to_pixels(i),grid_to_pixels(j),ANIMATION_BAT)
                     self.monsters.append(bat)
+                
+                elif cell == GridCell.Switch:
+                    switch_conf = next(
+                        (s for s in map.switches_config if s["x"] == i and s["y"] == j),
+                        None
+                    )
+                    switch_id = switch_conf["id"] if switch_conf else None
+                    initial_state = switch_conf.get("state", "off") == "on" if switch_conf else False
+
+                    switch = Switch(
+                        grid_to_pixels(i),
+                        grid_to_pixels(j),
+                        initial_state,
+                        switch_id
+                    )
+                    self.switches.append(switch)
+
+                elif cell == GridCell.Gate:
+                    # retrouver le gate correspondant dans la config YAML
+                    gate_conf = next((g for g in map.gates_config if g["x"] == i and g["y"] == j), None)
+                    open_if = gate_conf["open_if"] if gate_conf else None
+                    gate = Gate(grid_to_pixels(i), grid_to_pixels(j), open_if)
+                    self.gates.append(gate)
+                    self.wall.append(gate)
+                
 
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
@@ -178,8 +206,11 @@ class GameView(arcade.View):
             self.ground.draw()
             self.holes.draw()
             self.wall.draw()
+            self.switches.draw()
+            self.gates.draw()
             self.crystals.draw()
             self.monsters.draw()
+
             arcade.draw_sprite(self.player)
             if self.boomerang.is_active:
                 arcade.draw_sprite(self.boomerang)
@@ -208,6 +239,7 @@ class GameView(arcade.View):
 
         self.boomerang.update_boomerang()
         self.boomerang.update_animation()
+        switches_dict = {s.id: s for s in self.switches if s.id is not None}
 
         for monster in self.monsters:
             monster.update_monster()
@@ -232,6 +264,18 @@ class GameView(arcade.View):
             if distance <= 20:
                 self.window.show_view(GameView(MAP_DECOUVERTE))
 
+        for switch in arcade.check_for_collision_with_list(self.boomerang, self.switches):
+            switch.toggle()
+            if self.boomerang.state == BoomerangState.launching:
+                self.boomerang.start_returning()
+        
+        switches_dict = {s.id: s for s in self.switches}  # il faut ajouter l'attribut `id` à Switch
+        for gate in self.gates:
+            gate.update_state(switches_dict)
+            if gate.is_open and gate in self.wall:
+                self.wall.remove(gate)
+            if not gate.is_open and gate not in self.wall:
+                self.wall.append(gate)
 
         self.pan_camera_to_player(delta_time)
 

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Final
+import yaml
+
 
 class GridCell(Enum):
     Bush = "X"
@@ -10,6 +12,8 @@ class GridCell(Enum):
     SpinnerV = "S"
     Hole = "O"
     Bat = "v"
+    Switch = "^"
+    Gate = "|"
 
 conversion = {
     " ": GridCell.Grass,
@@ -20,6 +24,8 @@ conversion = {
     "S": GridCell.SpinnerV,
     "O": GridCell.Hole,
     "v": GridCell.Bat,
+    "^": GridCell.Switch,
+    "|": GridCell.Gate,
 }
 
 @dataclass(frozen=True)
@@ -29,6 +35,8 @@ class Map:
     player_center_x: int
     player_center_y: int
     grid: list[list[GridCell]]
+    switches_config: list[dict]
+    gates_config: list[dict]  
 
     def get(self, x: int, y:int) -> GridCell:
         return self.grid[self.height - 1 - y][x]
@@ -49,15 +57,13 @@ def map_extract(doc: str) -> Map:
 
     config_doc, grid_doc = doc.split("---", 1)
 
-    dimensions: dict[str, str] = {}
-    for line in config_doc.splitlines():
-        if not line.strip():  # ignore empty lines
-            continue
-        key, value = line.split(":", 1)
-        dimensions[key.strip()] = value.strip()
+    config = yaml.safe_load(config_doc)
 
-    height = int(dimensions["height"])
-    width = int(dimensions["width"])
+    width = config["width"]
+    height = config["height"]
+
+    switches_config = config.get("switches", [])
+    gates_config = config.get("gates", [])
 
     lines = [line.rstrip("\n") for line in grid_doc.splitlines()]
     lines = [line for line in lines if line.strip() and line.strip() != "---"]
@@ -84,7 +90,15 @@ def map_extract(doc: str) -> Map:
     if player_center_x is None or player_center_y is None:
         raise Exception("Format de carte invalide : aucun point de départ 'P' trouvé.")
 
-    return Map(width, height, player_center_x, player_center_y, grid)
+    return Map(
+        width, 
+        height, 
+        player_center_x, 
+        player_center_y, 
+        grid,
+        switches_config=switches_config, 
+        gates_config=gates_config
+    )
 
 def load_map(file: str) -> Map:
     with open(file, "r", encoding="utf-8") as f:

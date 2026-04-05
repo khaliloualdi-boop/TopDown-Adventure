@@ -19,15 +19,15 @@ class Bat(Monster):
         self.origin = Vec2(x, y)
 
         # Rayon du champ d’action
-        self.radius = 4 * TILE_SIZE
+        self.radius = 3 * TILE_SIZE
 
         # Générateur aléatoire
         self.rng = random.Random()
 
         # Direction initiale aléatoire
         angle = self.rng.uniform(0, 2 * math.pi)
-        self.change_x = BOOMERANG_SPEED * math.cos(angle)
-        self.change_y = BOOMERANG_SPEED * math.sin(angle)
+        self.change_x = BAT_SPEED * math.cos(angle)
+        self.change_y = BAT_SPEED * math.sin(angle)
 
     def update_monster(self) -> None:
 
@@ -52,7 +52,7 @@ class Bat(Monster):
             self.change_y = direction.y * BAT_SPEED
 
         # 3. Petit changement aléatoire
-        if self.rng.random() < 0.02:  # 2% de chance par frame
+        if self.rng.random() < 0.2:  # 20% de chance par frame
 
             # biais vers direction actuelle
             current = Vec2(self.change_x, self.change_y).normalize()
