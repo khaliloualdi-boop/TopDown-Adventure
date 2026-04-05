@@ -1,6 +1,5 @@
 from map import *
 import arcade
-
 from constants import *
 from gameview import GameView
 
