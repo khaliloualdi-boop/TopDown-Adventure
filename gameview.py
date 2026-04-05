@@ -164,7 +164,7 @@ class GameView(arcade.View):
                         None
                     )
                     switch_id = switch_conf["id"] if switch_conf else None
-                    initial_state = switch_conf.get("state", "off") == "on" if switch_conf else False
+                    initial_state = switch_conf.get("state", False) in ["on", True] if switch_conf else False
 
                     switch = Switch(
                         grid_to_pixels(i),
