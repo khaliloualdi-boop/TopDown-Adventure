@@ -18,6 +18,8 @@ class Player(arcade.TextureAnimationSprite):
     pressed_keys: set[int]
     horizontal_stack: list[int]
     vertical_stack: list[int]
+    equiped_weapons: list[int]
+    current_weapon: int
 
     def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int, Center_y: int) -> None:
         super().__init__(animation = Anim, scale = Scale, center_x = Center_x, center_y = Center_y)
@@ -25,6 +27,9 @@ class Player(arcade.TextureAnimationSprite):
         self.pressed_keys = set()
         self.horizontal_stack = []
         self.vertical_stack = []
+        self.equiped_weapons = [0,1]
+        self.current_weapon = 0
+
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         self.pressed_keys.add(symbol)

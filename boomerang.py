@@ -1,3 +1,4 @@
+from weapons import Weapons
 from math import sqrt
 from enum import Enum
 import arcade
@@ -10,13 +11,13 @@ class BoomerangState(Enum):
     launching = 1
     returning = 2
 
-class Boomerang(arcade.TextureAnimationSprite):
+class Boomerang(Weapons, arcade.TextureAnimationSprite):
     state: BoomerangState
     origin: Vec2
     direction: Direction
     player: Player
 
-    def __init__(self, Anim:  arcade.TextureAnimation, Scale: float, Center_x: int | float, Center_y: int | float, player: Player) -> None:
+    def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int | float, Center_y: int | float, player: Player) -> None:
         super().__init__(animation = Anim, scale = Scale, center_x = Center_x, center_y = Center_y)
         self.state = BoomerangState.inactive
         self.player = player
