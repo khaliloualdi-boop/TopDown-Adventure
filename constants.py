@@ -17,4 +17,12 @@ SPINNER_SPEED = 3
 
 BOOMERANG_SPEED = 8
 
-BAT_SPEED = 6
+BAT_SPEED = 4
+
+BLOB_SPEED = 1
+
+def grid_to_pixels(i: int) -> int:
+    return i * TILE_SIZE + (TILE_SIZE // 2)
+
+def pixel_to_grid(i: float) -> int:
+    return int(i  // TILE_SIZE)

@@ -1,3 +1,4 @@
+from weapons import Weapons
 from math import sqrt
 from arcade import Vec2
 from constants import *
@@ -18,8 +19,9 @@ class Player(arcade.TextureAnimationSprite):
     pressed_keys: set[int]
     horizontal_stack: list[int]
     vertical_stack: list[int]
-    equiped_weapons: list[int]
+    equiped_weapons: list[Weapons]
     current_weapon: int
+    is_attacking: bool
 
     def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int, Center_y: int) -> None:
         super().__init__(animation = Anim, scale = Scale, center_x = Center_x, center_y = Center_y)
@@ -27,11 +29,17 @@ class Player(arcade.TextureAnimationSprite):
         self.pressed_keys = set()
         self.horizontal_stack = []
         self.vertical_stack = []
-        self.equiped_weapons = [0,1]
+        self.equiped_weapons = []
         self.current_weapon = 0
+        self.is_attacking = False
+
+    @property
+    def direction(self) -> Direction:
+        return self.__direction
 
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
+
         self.pressed_keys.add(symbol)
         match symbol:
             case arcade.key.RIGHT | arcade.key.LEFT:
@@ -42,6 +50,9 @@ class Player(arcade.TextureAnimationSprite):
                 if symbol in self.vertical_stack:
                     self.vertical_stack.remove(symbol)
                 self.vertical_stack.append(symbol)
+            case arcade.key.R:
+                if not self.equiped_weapons[self.current_weapon].is_active:
+                    self.current_weapon = (self.current_weapon + 1) % len(self.equiped_weapons)
 
         self.updt_movement()
         self.updt_animation()
@@ -57,6 +68,11 @@ class Player(arcade.TextureAnimationSprite):
         self.updt_animation()
 
     def updt_movement(self) -> None:
+        if self.is_attacking:
+            self.change_x = 0
+            self.change_y = 0
+            return
+
         if self.horizontal_stack: #check si la liste est non vide
             horz = self.horizontal_stack[-1] #last element
             if horz == arcade.key.RIGHT:
@@ -90,7 +106,3 @@ class Player(arcade.TextureAnimationSprite):
             self.__direction = Direction.OUEST
         else:
             self.animation = IDLE_SPRITELIST[self.__direction.value]
-
-    @property
-    def direction(self) -> Direction:
-        return self.__direction

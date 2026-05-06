@@ -1,4 +1,5 @@
-from weapons import Weapons
+import textures
+from weapons import *
 from math import sqrt
 from enum import Enum
 import arcade
@@ -11,22 +12,24 @@ class BoomerangState(Enum):
     launching = 1
     returning = 2
 
-class Boomerang(Weapons, arcade.TextureAnimationSprite):
+class Boomerang(Weapons):
     state: BoomerangState
     origin: Vec2
     direction: Direction
     player: Player
 
     def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int | float, Center_y: int | float, player: Player) -> None:
-        super().__init__(animation = Anim, scale = Scale, center_x = Center_x, center_y = Center_y)
+        super().__init__(animation = Anim, scale = Scale, cx = Center_x, cy = Center_y)
         self.state = BoomerangState.inactive
         self.player = player
+        self.direction = self.player.direction
 
+    #test si le boomerang est actif
     @property
     def is_active(self) -> bool:
         return self.state != BoomerangState.inactive
 
-    def launch(self) -> None:
+    def attack(self) -> None:
         if not self.is_active:
             self.state = BoomerangState.launching
             self.origin = Vec2(self.player.center_x, self.player.center_y)
@@ -34,7 +37,7 @@ class Boomerang(Weapons, arcade.TextureAnimationSprite):
             self.direction = self.player.direction
             self.set_change(self.direction)
 
-    def update_boomerang(self) -> None:
+    def update_weapon(self, delta: float) -> None:
         match self.state:
             case BoomerangState.inactive:
                 return
@@ -52,6 +55,8 @@ class Boomerang(Weapons, arcade.TextureAnimationSprite):
 
                 if self.distance_from_point(Vec2(self.player.center_x, self.player.center_y)) <= TILE_SIZE/2:
                     self.deactivate()
+
+        self.update_animation()
 
 
     def distance_from_point(self, vec: Vec2) -> float:
@@ -76,13 +81,13 @@ class Boomerang(Weapons, arcade.TextureAnimationSprite):
         self.change_y = 0
 
     def return_to_player(self) -> None:
-        btc_vector = Vec2(self.player.center_x - self.center_x, self.player.center_y - self.center_y)
+        btp_vector = Vec2(self.player.center_x - self.center_x, self.player.center_y - self.center_y)
 
-        if btc_vector == (0,0):
+        if btp_vector == (0,0):
             self.change_x, self.change_y = 0, 0
             return
         else:
-            new_direction = btc_vector.normalize()
+            new_direction = btp_vector.normalize()
             self.change_x = new_direction.x * BOOMERANG_SPEED
             self.change_y = new_direction.y * BOOMERANG_SPEED
 

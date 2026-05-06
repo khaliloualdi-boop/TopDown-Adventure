@@ -62,11 +62,13 @@ def _load_animation_strip(
 
 _overworld_grid = _load_grid("assets/Top_Down_Adventure_Pack_v.1.0/Overworld_Tileset.png", 18, 13)
 
+_dungeon_grid = _load_grid("assets/Top_Down_Adventure_Pack_v.1.0/Dungeon_Tileset.png",13, 12)
+
 TEXTURE_GRASS: Final[arcade.Texture] = _overworld_grid[18*1 + 6]
 TEXTURE_BUSH: Final[arcade.Texture] = _overworld_grid[18*3 + 5]
 TEXTURE_HOLE: Final[arcade.Texture] = _overworld_grid[18*4 + 8]
-TEXTURE_GATE_OPEN = _overworld_grid[13*8 + 4]
-TEXTURE_GATE_CLOSED = _overworld_grid[13*8 + 7]
+TEXTURE_GATE_OPEN = _dungeon_grid[13*4 + 8]
+TEXTURE_GATE_CLOSED = _dungeon_grid[13*7 + 8]
 # Idle animations :
 
 ANIMATION_PLAYER_IDLE_DOWN: Final[arcade.TextureAnimation] = \
@@ -121,13 +123,13 @@ ANIMATION_BAT: Final[arcade.TextureAnimation] = \
 # Sword attack animation:
 
 ANIMATION_PLAYER_ATTACK_DOWN:Final[arcade.TextureAnimation] = \
-    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_down_anim_strip_6.png", 6, 50, (48,48))
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack48_down_anim_strip_6.png", 6, 50, (48,48))
 ANIMATION_PLAYER_ATTACK_UP:Final[arcade.TextureAnimation] = \
-    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_up_anim_strip_6.png",6 ,50,(48,48))
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack48_up_anim_strip_6.png",6 ,50,(48,48))
 ANIMATION_PLAYER_ATTACK_RIGHT:Final[arcade.TextureAnimation] = \
-    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_right_anim_strip_6.png",6 ,50, (48,48))
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack48_right_anim_strip_6.png",6 ,50, (48,48))
 ANIMATION_PLAYER_ATTACK_LEFT:Final[arcade.TextureAnimation] = \
-    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack_left_anim_strip_6.png",6, 50, (48,48))
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Char_Sprites/char_attack48_left_anim_strip_6.png",6, 50, (48,48))
 
 SWORD_ATTACK_LIST = [
     ANIMATION_PLAYER_ATTACK_DOWN,
@@ -135,3 +137,9 @@ SWORD_ATTACK_LIST = [
     ANIMATION_PLAYER_ATTACK_RIGHT,
     ANIMATION_PLAYER_ATTACK_LEFT
 ]
+ICON_BOOMERANG: Final[arcade.Texture] = _load_grid("assets/provided/boomerang-sheet.png", 8, 1)[0]
+ICON_SWORD: Final[arcade.Texture] = arcade.load_texture("assets/Sword Icon from Project Plan.png")
+ICON_ITEM_BOX: Final[arcade.Texture] = arcade.load_texture("assets/Top_Down_Adventure_Pack_v.1.0/Hud_Ui/item_box_hud.png")
+
+ANIMATION_BLOB:  Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkslime_Sprites/pinkslime_run_anim_anim_all_dir_strip_6.png", 6)

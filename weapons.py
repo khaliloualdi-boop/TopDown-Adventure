@@ -1,26 +1,20 @@
-from sword import Sword
 from abc import abstractmethod
-from boomerang import Boomerang
-from player import Player
 from dataclasses import dataclass
 import arcade
 from enum import Enum
 
-class Weapon_State(Enum):
-    active = 0
-    inactive = 1
+class Weapons(arcade.TextureAnimationSprite):
 
-class active_weapon(Enum):
-    boomerang = Boomerang
-    sword = Sword
+    def __init__(self, animation : arcade.TextureAnimation, scale : float, cx : float, cy: float) -> None:
+        super().__init__(animation = animation, scale = scale, center_x = cx, center_y = cy)
 
-class Weapons:
-    icon: ...
-    state: Weapon_State
-    player: Player
+    @property
+    @abstractmethod
+    def is_active(self) -> bool:
+        ...
 
     @abstractmethod
-    def attack(self, player: Player) -> None:
+    def attack(self) -> None:
         ...
 
     @abstractmethod
@@ -28,5 +22,5 @@ class Weapons:
         ...
 
     @abstractmethod
-    def update_weapon(self, delta_time: float) -> None:
+    def update_weapon(self, delta: float) -> None:
         ...

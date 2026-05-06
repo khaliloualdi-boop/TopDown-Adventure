@@ -1,7 +1,7 @@
-
+from __future__ import annotations
 from turtle import window_height, left
 from arcade.math import clamp
-from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect, TextureAnimation
+from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect, TextureAnimation, Texture
 from typing import Final
 import arcade
 from map import *
@@ -14,10 +14,11 @@ from bat import *
 from monster import Monster
 from switch import Switch
 from gate import Gate
+from sword import *
+from weapons import *
+from navmesh import *
+from blob import *
 
-
-def grid_to_pixels(i: int) -> int:
-    return i * TILE_SIZE + (TILE_SIZE // 2)
 
 class Spinner(Monster):
 
@@ -71,10 +72,12 @@ class GameView(arcade.View):
 
     player: Player
     boomerang: Boomerang
+    sword: Sword
+    weapons_icons : list[Texture]
     wall: arcade.SpriteList
     ground: arcade.SpriteList
     crystals: arcade.SpriteList
-
+    map_graph: Final[nx.Graph[tuple[int, int]]]
     physics_engine: Final[PhysicsEngineSimple]
     camera: Final[arcade.camera.Camera2D]
 
@@ -86,7 +89,6 @@ class GameView(arcade.View):
 
         self.world_width = map.width * TILE_SIZE
         self.world_height = map.height * TILE_SIZE
-
 
         self.player = Player(
             ANIMATION_PLAYER_IDLE_DOWN,
@@ -102,6 +104,17 @@ class GameView(arcade.View):
             grid_to_pixels(map.player_center_y),
             self.player
         )
+
+        self.sword = Sword(self.player)
+
+        self.player.equiped_weapons = [self.boomerang, self.sword]
+
+        self.weapons_icons = [
+            ICON_BOOMERANG,
+            ICON_SWORD
+            ]
+
+        self.map_graph = create_graph(map)
 
         #Initialize Spritelists :
         self.wall = arcade.SpriteList(use_spatial_hash=True)
@@ -153,11 +166,15 @@ class GameView(arcade.View):
                     self.holes.append(
                         arcade.Sprite(TEXTURE_HOLE, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j),
                         )
-                    )             
+                    )
                 elif cell == GridCell.Bat:
                     bat = Bat(grid_to_pixels(i),grid_to_pixels(j),ANIMATION_BAT)
                     self.monsters.append(bat)
-                
+
+                elif cell == GridCell.Blob:
+                    blob = Blob(ANIMATION_BLOB, i, j, self.map_graph, self.player, self.wall)
+                    self.monsters.append(blob)
+
                 elif cell == GridCell.Switch:
                     switch_conf = next(
                         (s for s in map.switches_config if s["x"] == i and s["y"] == j),
@@ -181,7 +198,7 @@ class GameView(arcade.View):
                     gate = Gate(grid_to_pixels(i), grid_to_pixels(j), open_if)
                     self.gates.append(gate)
                     self.wall.append(gate)
-                
+
 
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
@@ -211,18 +228,35 @@ class GameView(arcade.View):
             self.crystals.draw()
             self.monsters.draw()
 
-            arcade.draw_sprite(self.player)
-            if self.boomerang.is_active:
-                arcade.draw_sprite(self.boomerang)
+            if not self.sword.is_active:
+                arcade.draw_sprite(self.player)
+
+            current = self.player.equiped_weapons[self.player.current_weapon]
+            if current.is_active:
+                arcade.draw_sprite(current)
+
         with self.ui_camera.activate():
             arcade.Text(text=f"Score : {self.score}",x=10,y=self.window.height - 30,color=arcade.color.WHITE,font_size=20).draw()
 
+            x = self.window.width - 48
+            y = self.window.height - 48
+
+            # draw item box background
+            arcade.draw_texture_rect(
+                ICON_ITEM_BOX,
+                arcade.LBWH(x, y, 32, 32)
+            )
+            # draw weapon icon on top
+            arcade.draw_texture_rect(
+                self.weapons_icons[self.player.current_weapon],
+                arcade.LBWH(x + 8, y + 8, 32, 32)  # slight padding inside box
+            )
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         if symbol == arcade.key.SPACE:
             self.window.show_view(GameView(MAP_DECOUVERTE))
         elif symbol == arcade.key.D:
-            self.boomerang.launch()
+            self.player.equiped_weapons[self.player.current_weapon].attack()
         else:
             self.player.on_key_press(symbol, modifiers)
 
@@ -232,29 +266,36 @@ class GameView(arcade.View):
 
 
     def on_update(self, delta_time: float) -> None:
+        #def of the current weapon :
+
+        current = self.player.equiped_weapons[self.player.current_weapon]
 
         self.physics_engine.update()
         self.player.update_animation()
         self.crystals.update_animation()
-
-        self.boomerang.update_boomerang()
-        self.boomerang.update_animation()
+        current.update_weapon(delta_time)
         switches_dict = {s.id: s for s in self.switches if s.id is not None}
 
         for monster in self.monsters:
             monster.update_monster()
             monster.update_animation()
-            
+    # how to do both the animation and player ?
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
             self.score += 1
+    #added
+        if current.is_active:
+            for x in arcade.check_for_collision_with_list(current, self.crystals, 3):
+                x.remove_from_sprite_lists()
+                self.score += 1
 
-        
+            for monster in arcade.check_for_collision_with_list(current, self.monsters, 3):
+                self.monsters.remove(monster)
+
+
         if arcade.check_for_collision_with_list(self.player, self.monsters):
             self.window.show_view(GameView(MAP_DECOUVERTE))
 
-        for monster in arcade.check_for_collision_with_list(self.boomerang, self.monsters):
-            self.monsters.remove(monster)
 
         for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
             self.boomerang.start_returning()
@@ -264,11 +305,11 @@ class GameView(arcade.View):
             if distance <= 20:
                 self.window.show_view(GameView(MAP_DECOUVERTE))
 
-        for switch in arcade.check_for_collision_with_list(self.boomerang, self.switches):
+        for switch in arcade.check_for_collision_with_list(current, self.switches):
             switch.toggle()
             if self.boomerang.state == BoomerangState.launching:
                 self.boomerang.start_returning()
-        
+
         switches_dict = {s.id: s for s in self.switches}  # il faut ajouter l'attribut `id` à Switch
         for gate in self.gates:
             gate.update_state(switches_dict)

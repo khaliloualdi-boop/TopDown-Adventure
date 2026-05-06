@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Final
 import yaml
 
-
 class GridCell(Enum):
     Bush = "X"
     Grass = " "
@@ -14,6 +13,11 @@ class GridCell(Enum):
     Bat = "v"
     Switch = "^"
     Gate = "|"
+    Blob = "B"
+
+    @property
+    def is_walkable(self) -> bool:
+        return not (self == GridCell.Hole or self == GridCell.Bush)
 
 conversion = {
     " ": GridCell.Grass,
@@ -26,6 +30,7 @@ conversion = {
     "v": GridCell.Bat,
     "^": GridCell.Switch,
     "|": GridCell.Gate,
+    "B": GridCell.Blob
 }
 
 @dataclass(frozen=True)
@@ -36,7 +41,7 @@ class Map:
     player_center_y: int
     grid: list[list[GridCell]]
     switches_config: list[dict]
-    gates_config: list[dict]  
+    gates_config: list[dict]
 
     def get(self, x: int, y:int) -> GridCell:
         return self.grid[self.height - 1 - y][x]
@@ -91,12 +96,12 @@ def map_extract(doc: str) -> Map:
         raise Exception("Format de carte invalide : aucun point de départ 'P' trouvé.")
 
     return Map(
-        width, 
-        height, 
-        player_center_x, 
-        player_center_y, 
+        width,
+        height,
+        player_center_x,
+        player_center_y,
         grid,
-        switches_config=switches_config, 
+        switches_config=switches_config,
         gates_config=gates_config
     )
 

@@ -7,7 +7,7 @@ from monster import Monster
 
 class Bat(Monster):
 
-    def __init__(self, x: int, y: int, animation) -> None:
+    def __init__(self, x: int, y: int, animation : arcade.TextureAnimation) -> None:
         super().__init__(
             animation=animation,
             scale=SCALE,
