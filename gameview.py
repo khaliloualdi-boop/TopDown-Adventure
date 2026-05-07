@@ -286,9 +286,10 @@ class GameView(arcade.View):
             self.score += 1
     #added
         if current.is_active:
-            for x in arcade.check_for_collision_with_list(current, self.crystals, 3):
-                x.remove_from_sprite_lists()
-                self.score += 1
+            if isinstance(current,Sword):
+                for x in arcade.check_for_collision_with_list(current, self.crystals, 3):
+                    x.remove_from_sprite_lists()
+                    self.score += 1
 
             for monster in arcade.check_for_collision_with_list(current, self.monsters, 3):
                 self.monsters.remove(monster)
