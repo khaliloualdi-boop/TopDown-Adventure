@@ -1,10 +1,13 @@
+from boomerang import Direction
 from arcade import TextureAnimationSprite
 from weapons import *
 from enum import Enum
 from textures import SWORD_ATTACK_LIST, IDLE_SPRITELIST
-from constants import SCALE
+from constants import SCALE, TILE_SIZE
 from player import Direction, Player
 import arcade
+
+SWORD_OFFSET = TILE_SIZE  # Dash du player
 
 class Sword_State(Enum):
     inactive = 0
@@ -35,8 +38,20 @@ class Sword(Weapons):
         self.direction = self.player.direction
 
         self.animation = SWORD_ATTACK_LIST[self.direction.value]
-        self.center_x = self.player.center_x
-        self.center_y = self.player.center_y
+
+        match self.direction:
+            case Direction.NORD:
+                self.center_x = self.player.center_x
+                self.center_y = self.player.center_y + SWORD_OFFSET
+            case Direction.SUD:
+                self.center_x = self.player.center_x
+                self.center_y = self.player.center_y - SWORD_OFFSET
+            case Direction.EST:
+                self.center_x = self.player.center_x + SWORD_OFFSET
+                self.center_y = self.player.center_y
+            case _:
+                self.center_x = self.player.center_x - SWORD_OFFSET
+                self.center_y = self.player.center_y
 
     def update_weapon(self, delta: float) -> None:
         self.update_animation()
@@ -48,4 +63,5 @@ class Sword(Weapons):
         self.state = Sword_State.inactive
         self.player.is_attacking = False
         self.elapsed_time = 0
-        self.player.animation = IDLE_SPRITELIST[self.player.direction.value]
+        self.player.updt_movement()
+        self.player.updt_animation()

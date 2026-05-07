@@ -271,7 +271,8 @@ class GameView(arcade.View):
         current = self.player.equiped_weapons[self.player.current_weapon]
 
         self.physics_engine.update()
-        self.player.update_animation()
+        if not self.player.is_attacking:
+            self.player.update_animation()
         self.crystals.update_animation()
         current.update_weapon(delta_time)
         switches_dict = {s.id: s for s in self.switches if s.id is not None}

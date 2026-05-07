@@ -93,16 +93,21 @@ class Player(arcade.TextureAnimationSprite):
 
     def updt_animation(self) -> None:
         if self.change_y > 0:
-            self.animation = RUNNING_SPRITELIST[Direction.NORD.value]
             self.__direction = Direction.NORD
+            if not self.is_attacking:
+                self.animation = RUNNING_SPRITELIST[Direction.NORD.value]
         elif self.change_y < 0:
-            self.animation = RUNNING_SPRITELIST[Direction.SUD.value]
             self.__direction = Direction.SUD
+            if not self.is_attacking:
+                self.animation = RUNNING_SPRITELIST[Direction.SUD.value]
         elif self.change_x > 0:
-            self.animation = RUNNING_SPRITELIST[Direction.EST.value]
             self.__direction = Direction.EST
+            if not self.is_attacking:
+                self.animation = RUNNING_SPRITELIST[Direction.EST.value]
         elif self.change_x < 0:
-            self.animation = RUNNING_SPRITELIST[Direction.OUEST.value]
             self.__direction = Direction.OUEST
+            if not self.is_attacking:
+                self.animation = RUNNING_SPRITELIST[Direction.OUEST.value]
         else:
-            self.animation = IDLE_SPRITELIST[self.__direction.value]
+            if not self.is_attacking:
+                self.animation = IDLE_SPRITELIST[self.__direction.value]
