@@ -168,7 +168,7 @@ class GameView(arcade.View):
                         )
                     )
                 elif cell == GridCell.Bat:
-                    bat = Bat(grid_to_pixels(i),grid_to_pixels(j),ANIMATION_BAT)
+                    bat = Bat(grid_to_pixels(i), grid_to_pixels(j), ANIMATION_BAT, self.world_width, self.world_height)
                     self.monsters.append(bat)
 
                 elif cell == GridCell.Blob:
@@ -298,6 +298,7 @@ class GameView(arcade.View):
 
 
         for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
+            
             self.boomerang.start_returning()
 
         for hole in self.holes:

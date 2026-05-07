@@ -7,7 +7,7 @@ from monster import Monster
 
 class Bat(Monster):
 
-    def __init__(self, x: int, y: int, animation : arcade.TextureAnimation) -> None:
+    def __init__(self, x: int, y: int, animation: arcade.TextureAnimation, map_width: int, map_height: int) -> None:
         super().__init__(
             animation=animation,
             scale=SCALE,
@@ -18,8 +18,14 @@ class Bat(Monster):
         # Position d'origine
         self.origin = Vec2(x, y)
 
-        # Rayon du champ d’action
+        # Rayon du champ d'action
         self.radius = 3 * TILE_SIZE
+
+        # Limites de la map en pixels (on exclut la tuile de bord, comme les spinners)
+        self.min_x = TILE_SIZE
+        self.max_x = map_width - TILE_SIZE
+        self.min_y = TILE_SIZE
+        self.max_y = map_height - TILE_SIZE
 
         # Générateur aléatoire
         self.rng = random.Random()
@@ -35,7 +41,22 @@ class Bat(Monster):
         self.center_x += self.change_x
         self.center_y += self.change_y
 
-        # 2. Rester dans la zone
+        # 2. Rebond sur les bords de la map (comme les spinners sur leurs limites)
+        if self.center_x < self.min_x:
+            self.center_x = self.min_x
+            self.change_x = abs(self.change_x)
+        elif self.center_x > self.max_x:
+            self.center_x = self.max_x
+            self.change_x = -abs(self.change_x)
+
+        if self.center_y < self.min_y:
+            self.center_y = self.min_y
+            self.change_y = abs(self.change_y)
+        elif self.center_y > self.max_y:
+            self.center_y = self.max_y
+            self.change_y = -abs(self.change_y)
+
+        # 3. Rester dans la zone d'origine
         dist = arcade.math.get_distance(
             self.center_x, self.center_y,
             self.origin.x, self.origin.y
@@ -51,7 +72,7 @@ class Bat(Monster):
             self.change_x = direction.x * BAT_SPEED
             self.change_y = direction.y * BAT_SPEED
 
-        # 3. Petit changement aléatoire
+        # 4. Petit changement aléatoire
         if self.rng.random() < 0.2:  # 20% de chance par frame
 
             # biais vers direction actuelle
