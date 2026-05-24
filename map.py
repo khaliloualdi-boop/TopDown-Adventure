@@ -14,6 +14,9 @@ class GridCell(Enum):
     Switch = "^"
     Gate = "|"
     Blob = "B"
+    CrystalGate = "G"  
+    Chest = "C"
+    Boss = "F"
 
     @property
     def is_walkable(self) -> bool:
@@ -30,7 +33,10 @@ conversion = {
     "v": GridCell.Bat,
     "^": GridCell.Switch,
     "|": GridCell.Gate,
-    "B": GridCell.Blob
+    "B": GridCell.Blob,
+    "G": GridCell.CrystalGate,
+    "C": GridCell.Chest,
+    "F": GridCell.Boss,
 }
 
 @dataclass(frozen=True)
@@ -111,7 +117,7 @@ def load_map(file: str) -> Map:
     return map_extract(text)
 
 MAP_DECOUVERTE = load_map("maps/map1.txt")
-
+MAP_BOSS = load_map("maps/map2.txt")
 # 1. lire le fichier
 # 2. separer la partie config et la partie map
 # 3. determiner les dimensions de la carte

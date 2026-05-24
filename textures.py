@@ -143,3 +143,47 @@ ICON_ITEM_BOX: Final[arcade.Texture] = arcade.load_texture("assets/Top_Down_Adve
 
 ANIMATION_BLOB:  Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkslime_Sprites/pinkslime_run_anim_anim_all_dir_strip_6.png", 6)
+
+
+#textures de l'extension
+ANIMATION_CHEST_OPENING: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Props_Items_(animated)/lootchest_item_anim_opening_strip_5.png", 5, 150)
+
+ANIMATION_CHEST_IDLE: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Props_Items_(animated)/lootchest_item_anim_strip_8.png", 8, 100)
+
+TEXTURE_CHEST_OPEN: Final[arcade.Texture] = \
+    arcade.load_texture("assets/Top_Down_Adventure_Pack_v.1.0/Props_Items_(animated)/lootchest_item_static_open.png")
+
+
+TEXTURE_HEALTH_BAR: Final[arcade.Texture] = \
+    arcade.load_texture("assets/Top_Down_Adventure_Pack_v.1.0/Hud_Ui/health_bar_hud.png")
+
+TEXTURE_HEALTH_HUB: Final[arcade.Texture] = \
+    arcade.load_texture("assets/Top_Down_Adventure_Pack_v.1.0/Hud_Ui/health_hud.png")
+
+
+ANIMATION_BOMBERPLANT_IDLE: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomberplant_idle_anim_all_dir_strip_5.png", 5)
+
+ANIMATION_BOMBERPLANT_ATTACK: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomberplant_attack_anim_all_dir_strip_10.png", 10)
+
+ANIMATION_BOMBERPLANT_HIT: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomberplant_hit_anim_all_dir_strip_4.png", 4)
+
+ANIMATION_BOMBERPLANT_DEATH: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomberplant_death_anim_all_dir_strip_8.png", 8)
+
+# Bomb animations
+ANIMATION_BOMB_UP: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomb_going_up_anim_strip_4.png", 4)
+
+ANIMATION_BOMB_DOWN: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomb_going_down_anim_strip_4.png", 4)
+
+ANIMATION_BOMB_EXPLOSION: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomb_explosion_anim_strip_8.png", 8)
+
+ANIMATION_BOMB_MARKER: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomb_hit_marker_fx_anim_strip_4.png", 4)

@@ -18,7 +18,9 @@ from sword import *
 from weapons import *
 from navmesh import *
 from blob import *
-
+from boss import Boss
+from chest import Chest, ChestState
+from crystal_gate import CrystalGate
 
 class Spinner(Monster):
 
@@ -125,6 +127,12 @@ class GameView(arcade.View):
         self.holes = arcade.SpriteList(use_spatial_hash=True)
         self.switches = arcade.SpriteList(use_spatial_hash=True)
         self.gates = arcade.SpriteList(use_spatial_hash=True)
+        self.bosses = arcade.SpriteList(use_spatial_hash=True)
+        self.chests = arcade.SpriteList(use_spatial_hash=True)
+        self.crystal_gates = arcade.SpriteList(use_spatial_hash=True)
+        self.game_won = False
+        self.score = 0
+        self.boss_room_entered = (map is MAP_BOSS)
 
         for i in range(map.width):
             for j in range(map.height):
@@ -199,6 +207,23 @@ class GameView(arcade.View):
                     self.gates.append(gate)
                     self.wall.append(gate)
 
+                elif cell == GridCell.CrystalGate:
+                    cgate = CrystalGate(grid_to_pixels(i), grid_to_pixels(j))
+                    self.crystal_gates.append(cgate)
+                    self.wall.append(cgate)   # fermé au départ = obstacle
+
+                elif cell == GridCell.Chest:
+                    chest = Chest(grid_to_pixels(i), grid_to_pixels(j))
+                    self.chests.append(chest)
+
+                elif cell == GridCell.Boss:
+                    boss = Boss(
+                        cx=grid_to_pixels(i),
+                        cy=grid_to_pixels(j),
+                        player=self.player,
+                        obstacles=self.wall,    # les buissons bloquent la vue
+                    )
+                    self.bosses.append(boss)
 
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
@@ -227,7 +252,16 @@ class GameView(arcade.View):
             self.gates.draw()
             self.crystals.draw()
             self.monsters.draw()
+            self.bosses.draw()
+            self.crystal_gates.draw()
+            self.chests.draw()
 
+            for boss in self.bosses:
+                boss.draw_extras()    # bombes + marqueurs + barre de vie
+
+                # Barre de vie du boss
+                for boss in self.bosses:
+                    boss.draw_extras()
             if not self.sword.is_active:
                 arcade.draw_sprite(self.player)
 
@@ -251,6 +285,16 @@ class GameView(arcade.View):
                 self.weapons_icons[self.player.current_weapon],
                 arcade.LBWH(x + 8, y + 8, 32, 32)  # slight padding inside box
             )
+
+            if self.game_won:
+                arcade.Text(
+                    "YOU WIN !",
+                    x=self.window.width / 2,
+                    y=self.window.height / 2,
+                    color=arcade.color.GOLD,
+                    font_size=40,
+                    anchor_x="center",
+                ).draw()
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         if symbol == arcade.key.SPACE:
@@ -280,11 +324,11 @@ class GameView(arcade.View):
         for monster in self.monsters:
             monster.update_monster()
             monster.update_animation()
-    # how to do both the animation and player ?
+
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
             self.score += 1
-    #added
+
         if current.is_active:
             if isinstance(current,Sword):
                 for x in arcade.check_for_collision_with_list(current, self.crystals, 3):
@@ -321,6 +365,63 @@ class GameView(arcade.View):
             if not gate.is_open and gate not in self.wall:
                 self.wall.append(gate)
 
+        for boss in list(self.bosses):
+            boss.update_monster()
+            boss.update_boss(delta_time)
+
+            for bomb in boss.bombs:
+                if bomb.hits_player(self.player):
+                    self.window.show_view(GameView(MAP_DECOUVERTE))
+                    return
+
+            if not boss.is_alive:
+                self.bosses.remove(boss)
+                for chest in self.chests:
+                    if not chest.is_open and chest.state == ChestState.closed:
+                        chest.open()
+
+        if current.is_active:
+            for boss in list(self.bosses):
+                if arcade.check_for_collision(current, boss):
+                    boss.take_hit()
+                if not boss.is_alive:
+                    self.bosses.remove(boss)
+                    for chest in self.chests:
+                        chest.open()
+
+        if arcade.check_for_collision_with_list(self.player, self.bosses):
+            self.window.show_view(GameView(MAP_DECOUVERTE))
+
+        # --- Joueur atteint le coffre ouvert ---
+        for chest in self.chests:
+            chest.update_chest(delta_time)   # ouverture
+            if chest.is_open and arcade.check_for_collision(self.player, chest):
+                self.game_won = True
+                return
+
+        # --- Porte à cristaux ---
+        crystal_count = len(self.crystals)
+        for cgate in self.crystal_gates:
+            was_open = cgate.is_open
+            cgate.update_state(crystal_count)
+            if cgate.is_open and not was_open:
+                # La porte s'ouvre : retirer du mur pour laisser passer
+                if cgate in self.wall:
+                    self.wall.remove(cgate)
+            elif not cgate.is_open and was_open:
+                if cgate not in self.wall:
+                    self.wall.append(cgate)
+
+        # Transition : crystal gate ouverte + joueur proche (pas besoin de collision exacte)
+        if not self.boss_room_entered and len(self.crystals) == 0:
+            for cgate in self.crystal_gates:
+                dist = arcade.math.get_distance(
+                    self.player.center_x, self.player.center_y,
+                    cgate.center_x, cgate.center_y,
+                )
+                if dist <= TILE_SIZE * 1.5:
+                    self.window.show_view(GameView(MAP_BOSS))
+                    return
         self.pan_camera_to_player(delta_time)
 
     def pan_camera_to_player(self, delta_time: float) -> None:

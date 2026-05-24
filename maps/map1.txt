@@ -41,6 +41,6 @@ x      S              S     *  x       x
 x  *       v    *              O       x
 x         |                       v    x
 x  O  xx     s        xs               x
-x  P      *           x       *        x
+xG  P      *           x       *       x
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ---

@@ -1,0 +1,24 @@
+width: 22
+height: 18
+switches: []
+gates: []
+---
+xxxxxxxxxxxxxxxxxxxxxx
+x                    x
+x                    x
+x                    x
+x         F          x
+x                    x
+x                    x
+x                    x
+x                    x
+x                    x
+x                    x
+x                    x
+x         C          x
+x                    x
+x                    x
+x                    x
+x         P          x
+xxxxxxxxxxxxxxxxxxxxxx
+---
