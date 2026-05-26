@@ -4,7 +4,7 @@ from gate import Gate
 from switch import Switch
 from navmesh import pixel_to_subnode, subnode_to_pixel, SUBDIVISIONS, create_graph, get_path, build_patrol_sub_graph
 from constants import TILE_SIZE
- 
+
 # Vérifie les limites d'un spinner horizontal entre deux buissons
 def test_horizontal_limits() -> None:
     doc = (
@@ -12,15 +12,15 @@ def test_horizontal_limits() -> None:
         "height: 3\n"
         "---\n"
         "xxxxx\n"
-        "x s x\n"
+        "xPs x\n"
         "xxxxx\n"
     )
     game_map = map_extract(doc)
     limits = compute_horizontal_limits(game_map, 2, 1)
     assert limits.min_pos == 1
     assert limits.max_pos == 3
- 
- 
+
+
 # Vérifie les limites d'un spinner vertical entre deux buissons
 def test_vertical_limits() -> None:
     doc = (
@@ -29,7 +29,7 @@ def test_vertical_limits() -> None:
         "---\n"
         "xxx\n"
         "xSx\n"
-        "x x\n"
+        "xPx\n"
         "x x\n"
         "xxx\n"
     )
@@ -37,8 +37,8 @@ def test_vertical_limits() -> None:
     limits = compute_vertical_limits(game_map, 1, 3)
     assert limits.min_pos == 1
     assert limits.max_pos == 3
- 
- 
+
+
 # Vérifie qu'une map minimale valide est correctement parsée
 def test_map_extract_basic() -> None:
     doc = (
@@ -46,14 +46,14 @@ def test_map_extract_basic() -> None:
         "height: 3\n"
         "---\n"
         "xxx\n"
-        "x x\n"
+        "xPx\n"
         "xxx\n"
     )
     m = map_extract(doc)
     assert m.width == 3
     assert m.height == 3
- 
- 
+
+
 # Vérifie que le point de départ P est bien détecté et converti en herbe
 def test_map_extract_player_position() -> None:
     doc = (
@@ -104,29 +104,29 @@ def test_map_switches_config_parsed() -> None:
     assert m.switches_config[0]["id"] == "sw1"
     assert m.switches_config[0]["x"] == 0
     assert m.switches_config[0]["y"] == 0
-    assert m.switches_config[0]["state"] == "on"
+    assert m.switches_config[0]["state"] == True
 
 
 # Vérifie que l'herbe est walkable
 def test_grass_is_walkable() -> None:
     assert GridCell.Grass.is_walkable is True
- 
- 
+
+
 # Vérifie que les buissons ne sont pas walkables
 def test_bush_is_not_walkable() -> None:
     assert GridCell.Bush.is_walkable is False
- 
- 
+
+
 # Vérifie que les trous ne sont pas walkables
 def test_hole_is_not_walkable() -> None:
     assert GridCell.Hole.is_walkable is False
- 
- 
+
+
 # Vérifie que les cristaux sont walkables
 def test_crystal_is_walkable() -> None:
     assert GridCell.Cristal.is_walkable is True
- 
- 
+
+
 # Vérifie que les spinners sont walkables
 def test_spinner_is_walkable() -> None:
     assert GridCell.SpinnerH.is_walkable is True
