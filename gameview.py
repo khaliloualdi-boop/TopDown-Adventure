@@ -1,5 +1,4 @@
 from __future__ import annotations
-from turtle import window_height, left
 from arcade.math import clamp
 from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect, TextureAnimation, Texture
 from typing import Final
@@ -11,7 +10,8 @@ from spinner import *
 from player import *
 from boomerang import *
 from bat import *
-from monster import Monster
+from spinner import Spinner
+from monster import Monster, MonsterState
 from switch import Switch
 from gate import Gate
 from sword import *
@@ -21,50 +21,6 @@ from blob import *
 from boss import Boss
 from chest import Chest, ChestState
 from crystal_gate import CrystalGate
-
-class Spinner(Monster):
-
-    def __init__(self, x: int, y: int, is_horizontal: bool, limits: SpinnerLimits) -> None:
-
-        super().__init__(
-            animation = ANIMATION_SPINNER,
-            scale = SCALE,
-            center_x = grid_to_pixels(x),
-            center_y = grid_to_pixels(y),
-        )
-
-        self.is_horizontal = is_horizontal
-        self.limits = limits
-
-        if is_horizontal:
-            self.change_x = SPINNER_SPEED
-            self.change_y = 0
-        else:
-            self.change_x = 0
-            self.change_y = SPINNER_SPEED
-
-    def update_monster(self) -> None:
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-
-        if self.is_horizontal:
-            if self.center_x < grid_to_pixels(self.limits.min_pos):
-                self.center_x = grid_to_pixels(self.limits.min_pos)
-                self.change_x *= -1
-
-            if self.center_x > grid_to_pixels(self.limits.max_pos):
-                self.center_x = grid_to_pixels(self.limits.max_pos)
-                self.change_x *= -1
-
-        else:
-            if self.center_y < grid_to_pixels(self.limits.min_pos):
-                self.center_y = grid_to_pixels(self.limits.min_pos)
-                self.change_y *= -1
-
-            if self.center_y > grid_to_pixels(self.limits.max_pos):
-                self.center_y = grid_to_pixels(self.limits.max_pos)
-                self.change_y *= -1
-
 
 class GameView(arcade.View):
     """Main in-game view."""
@@ -109,7 +65,7 @@ class GameView(arcade.View):
 
         self.sword = Sword(self.player)
 
-        self.player.equiped_weapons = [self.boomerang, self.sword]
+        self.player.equipped_weapons = [self.boomerang, self.sword]
 
         self.weapons_icons = [
             ICON_BOOMERANG,
@@ -245,16 +201,16 @@ class GameView(arcade.View):
     def on_draw(self) -> None:
         self.clear()
         with self.camera.activate():
-            self.ground.draw()
-            self.holes.draw()
-            self.wall.draw()
-            self.switches.draw()
-            self.gates.draw()
-            self.crystals.draw()
-            self.monsters.draw()
-            self.bosses.draw()
-            self.crystal_gates.draw()
-            self.chests.draw()
+            self.ground.draw(pixelated=True)
+            self.holes.draw(pixelated=True)
+            self.wall.draw(pixelated=True)
+            self.switches.draw(pixelated=True)
+            self.gates.draw(pixelated=True)
+            self.crystals.draw(pixelated=True)
+            self.monsters.draw(pixelated=True)
+            self.bosses.draw(pixelated=True)
+            self.crystal_gates.draw(pixelated=True)
+            self.chests.draw(pixelated=True)
 
             for boss in self.bosses:
                 boss.draw_extras()    # bombes + marqueurs + barre de vie
@@ -262,12 +218,13 @@ class GameView(arcade.View):
                 # Barre de vie du boss
                 for boss in self.bosses:
                     boss.draw_extras()
-            if not self.sword.is_active:
-                arcade.draw_sprite(self.player)
 
-            current = self.player.equiped_weapons[self.player.current_weapon]
+            if not self.sword.is_active: # ATTACKS FROM THE BACK STILL HIT THE PLAYER
+                arcade.draw_sprite(self.player, pixelated=True)
+
+            current = self.player.equipped_weapons[self.player.current_weapon]
             if current.is_active:
-                arcade.draw_sprite(current)
+                arcade.draw_sprite(current, pixelated=True)
 
         with self.ui_camera.activate():
             arcade.Text(text=f"Score : {self.score}",x=10,y=self.window.height - 30,color=arcade.color.WHITE,font_size=20).draw()
@@ -300,7 +257,7 @@ class GameView(arcade.View):
         if symbol == arcade.key.SPACE:
             self.window.show_view(GameView(MAP_DECOUVERTE))
         elif symbol == arcade.key.D:
-            self.player.equiped_weapons[self.player.current_weapon].attack()
+            self.player.equipped_weapons[self.player.current_weapon].attack()
         else:
             self.player.on_key_press(symbol, modifiers)
 
@@ -312,44 +269,61 @@ class GameView(arcade.View):
     def on_update(self, delta_time: float) -> None:
         #def of the current weapon :
 
-        current = self.player.equiped_weapons[self.player.current_weapon]
+        current = self.player.equipped_weapons[self.player.current_weapon]
 
         self.physics_engine.update()
+
         if not self.player.is_attacking:
             self.player.update_animation()
-        self.crystals.update_animation()
-        current.update_weapon(delta_time)
-        switches_dict = {s.id: s for s in self.switches if s.id is not None}
 
+        self.crystals.update_animation()
+
+        current.update_weapon(delta_time)
+
+    # Monsters :
+
+        to_remove = []
         for monster in self.monsters:
-            monster.update_monster()
-            monster.update_animation()
+            if monster.death_state == MonsterState.alive:
+                monster.update_monster(delta_time)
+            monster.update_death(delta_time)
+            if monster.death_state == MonsterState.dead:
+                to_remove.append(monster)
+            else:
+                monster.update_animation()
+
+        for monster in to_remove:
+            self.monsters.remove(monster)
+
+    # Crystals :
 
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
             self.score += 1
 
+    # Attack :
+
         if current.is_active:
-            if isinstance(current,Sword):
+            if current.collects_crystals:
                 for x in arcade.check_for_collision_with_list(current, self.crystals, 3):
                     x.remove_from_sprite_lists()
                     self.score += 1
 
             for monster in arcade.check_for_collision_with_list(current, self.monsters, 3):
-                self.monsters.remove(monster)
+                if monster.death_state == MonsterState.alive:
+                        monster.start_dying()
 
 
-        if arcade.check_for_collision_with_list(self.player, self.monsters):
+        if any(monster.death_state == MonsterState.alive for monster in arcade.check_for_collision_with_list(self.player, self.monsters)):
             self.window.show_view(GameView(MAP_DECOUVERTE))
 
-
-        for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
-            
-            self.boomerang.start_returning()
+        if self.boomerang.state == BoomerangState.launching:
+            for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
+                self.boomerang.start_returning()
 
         for hole in self.holes:
             distance = arcade.math.get_distance(self.player.center_x,self.player.center_y,hole.center_x,hole.center_y,)
-            if distance <= 20:
+            if distance <= HOLE_FALL_DISTANCE:
                 self.window.show_view(GameView(MAP_DECOUVERTE))
 
         for switch in arcade.check_for_collision_with_list(current, self.switches):
@@ -357,7 +331,7 @@ class GameView(arcade.View):
             if self.boomerang.state == BoomerangState.launching:
                 self.boomerang.start_returning()
 
-        switches_dict = {s.id: s for s in self.switches}  # il faut ajouter l'attribut `id` à Switch
+        switches_dict = {s.id: s for s in self.switches if s.id is not None}  # il faut ajouter l'attribut `id` à Switch
         for gate in self.gates:
             gate.update_state(switches_dict)
             if gate.is_open and gate in self.wall:

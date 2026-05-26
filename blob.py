@@ -1,4 +1,4 @@
-from platform import node
+from textures import DEATH_ANIMATION_BLOB
 from constants import *
 from typing import Final
 from monster import Monster
@@ -10,6 +10,9 @@ import arcade
 
 
 class Blob(Monster):
+
+    Death_animation = DEATH_ANIMATION_BLOB
+    Death_duration = MONSTER_DEATH_DURATION
 
     patrol_graph: Final[nx.Graph[tuple[int, int]]]
     current_path: path
@@ -28,7 +31,7 @@ class Blob(Monster):
         self.last_known_player_node: tuple[int, int] | None = None
 
     @property
-    def player_is_in_patroll_area(self) -> bool:
+    def player_is_in_patrol_area(self) -> bool:
         player_node = (pixel_to_subnode(self.player.center_x), pixel_to_subnode(self.player.center_y))
         nearest_node = self.nearest_node(self.player.center_x, self.player.center_y)
         return abs(player_node[0] - nearest_node[0]) <=2 and abs(player_node[1] - nearest_node[1]) <=2
@@ -64,9 +67,9 @@ class Blob(Monster):
         self.current_path = path[1:] if len(path) > 1 else path
 
 
-    def update_monster(self) -> None:
+    def update_monster(self, delta_time : float) -> None:
 
-        if arcade.has_line_of_sight(self.position, self.player.position, self.obstacles) and self.player_is_in_patroll_area:
+        if arcade.has_line_of_sight(self.position, self.player.position, self.obstacles) and self.player_is_in_patrol_area:
             player_node = self.nearest_node(self.player.center_x, self.player.center_y)
             if player_node != self.last_known_player_node:
                 self.last_known_player_node = player_node

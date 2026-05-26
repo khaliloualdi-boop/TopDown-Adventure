@@ -1,25 +1,14 @@
+from constants import Direction, PLAYER_MOVEMENT_SPEED
+from textures import RUNNING_SPRITELIST, IDLE_SPRITELIST
 from weapons import Weapons
-from math import sqrt
-from arcade import Vec2
-from constants import *
-from textures import *
-from enum import Enum
-from typing import Final
 import arcade
-
-
-class Direction (Enum):
-    SUD = 0
-    NORD = 1
-    EST = 2
-    OUEST = 3
 
 class Player(arcade.TextureAnimationSprite):
     __direction: Direction
     pressed_keys: set[int]
     horizontal_stack: list[int]
     vertical_stack: list[int]
-    equiped_weapons: list[Weapons]
+    equipped_weapons: list[Weapons]
     current_weapon: int
     is_attacking: bool
 
@@ -29,7 +18,7 @@ class Player(arcade.TextureAnimationSprite):
         self.pressed_keys = set()
         self.horizontal_stack = []
         self.vertical_stack = []
-        self.equiped_weapons = []
+        self.equipped_weapons = []
         self.current_weapon = 0
         self.is_attacking = False
 
@@ -51,11 +40,11 @@ class Player(arcade.TextureAnimationSprite):
                     self.vertical_stack.remove(symbol)
                 self.vertical_stack.append(symbol)
             case arcade.key.R:
-                if not self.equiped_weapons[self.current_weapon].is_active:
-                    self.current_weapon = (self.current_weapon + 1) % len(self.equiped_weapons)
+                if not self.equipped_weapons[self.current_weapon].is_active:
+                    self.current_weapon = (self.current_weapon + 1) % len(self.equipped_weapons)
 
-        self.updt_movement()
-        self.updt_animation()
+        self.update_movement()
+        self.update__animation()
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
         self.pressed_keys.discard(symbol)
@@ -64,10 +53,10 @@ class Player(arcade.TextureAnimationSprite):
         if  symbol in self.vertical_stack:
             self.vertical_stack.remove(symbol)
 
-        self.updt_movement()
-        self.updt_animation()
+        self.update_movement()
+        self.update__animation()
 
-    def updt_movement(self) -> None:
+    def update_movement(self) -> None:
         if self.is_attacking:
             self.change_x = 0
             self.change_y = 0
@@ -91,7 +80,7 @@ class Player(arcade.TextureAnimationSprite):
         else:
             self.change_y = 0
 
-    def updt_animation(self) -> None:
+    def update__animation(self) -> None:
         if self.change_y > 0:
             self.__direction = Direction.NORD
             if not self.is_attacking:

@@ -1,4 +1,3 @@
-from arcade.examples.particle_fireworks import TEXTURE
 from typing import Final
 import arcade
 
@@ -108,6 +107,9 @@ ANIMATION_PLAYER_RUN_LEFT: Final[arcade.TextureAnimation] = \
 ANIMATION_SPINNER: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Spinner_Sprites/spinner_run_attack_anim_all_dir_strip_8.png", 3)
 
+DEATH_ANIMATION_SPINNER: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Spinner_Sprites/spinner_death_anim_all_dir_strip_8.png", 8)
+
 RUNNING_SPRITELIST = [
     ANIMATION_PLAYER_RUN_DOWN,
     ANIMATION_PLAYER_RUN_UP,
@@ -120,6 +122,10 @@ ANIMATION_BOOMERANG: Final[arcade.TextureAnimation] = \
 
 ANIMATION_BAT: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkbat_Sprites/pinkbat_idle_left_anim_strip_5.png", 5)
+
+DEATH_ANIMATION_BAT: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkbat_Sprites/pinkbat_death_anim_left_strip_8.png", 8)
+
 # Sword attack animation:
 
 ANIMATION_PLAYER_ATTACK_DOWN:Final[arcade.TextureAnimation] = \
@@ -187,3 +193,6 @@ ANIMATION_BOMB_EXPLOSION: Final[arcade.TextureAnimation] = \
 
 ANIMATION_BOMB_MARKER: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Bomberplant_Sprites/bomb_hit_marker_fx_anim_strip_4.png", 4)
+
+DEATH_ANIMATION_BLOB: Final[arcade.TextureAnimation] = \
+    _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkslime_Sprites/pinkslime_death_anim_all_dir_strip_8.png", 8)

@@ -1,6 +1,6 @@
-from map import *
+from map import MAP_DECOUVERTE
+from constants import MAX_WINDOW_HEIGHT, MAX_WINDOW_WIDTH, WINDOW_TITLE
 import arcade
-from constants import *
 from gameview import GameView
 
 def main() -> None:

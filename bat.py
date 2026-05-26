@@ -1,3 +1,4 @@
+from textures import DEATH_ANIMATION_BAT
 import arcade
 import random
 from arcade import Vec2
@@ -6,6 +7,9 @@ import math
 from monster import Monster
 
 class Bat(Monster):
+
+    Death_animation = DEATH_ANIMATION_BAT
+    Death_duration = MONSTER_DEATH_DURATION
 
     def __init__(self, x: int, y: int, animation: arcade.TextureAnimation, map_width: int, map_height: int) -> None:
         super().__init__(
@@ -35,7 +39,8 @@ class Bat(Monster):
         self.change_x = BAT_SPEED * math.cos(angle)
         self.change_y = BAT_SPEED * math.sin(angle)
 
-    def update_monster(self) -> None:
+
+    def update_monster(self, delta_time : float) -> None:
 
         # 1. Mouvement
         self.center_x += self.change_x

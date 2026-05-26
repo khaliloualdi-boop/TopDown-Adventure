@@ -3,38 +3,42 @@ from arcade import TextureAnimationSprite
 from weapons import *
 from enum import Enum
 from textures import SWORD_ATTACK_LIST, IDLE_SPRITELIST
-from constants import SCALE, TILE_SIZE
-from player import Direction, Player
+from constants import SCALE, TILE_SIZE, SWORD_ATTACK_DURATION, Direction
+from player import Player
 import arcade
 
 SWORD_OFFSET = TILE_SIZE  # Dash du player
 
-class Sword_State(Enum):
+class SwordState(Enum):
     inactive = 0
     active = 1
 
 class Sword(Weapons):
     player: Player
-    state: Sword_State
+    state: SwordState
     direction: Direction
     elapsed_time: float
 
     def __init__(self, player: Player) -> None:
         super().__init__(animation = SWORD_ATTACK_LIST[0], scale = SCALE, cx = 0, cy = 0)
         self.player = player
-        self.state = Sword_State.inactive
+        self.state = SwordState.inactive
         self.elapsed_time = 0
 
     @property
+    def collects_crystals(self) -> bool:
+        return True
+
+    @property
     def is_active(self) -> bool:
-        return self.state != Sword_State.inactive
+        return self.state != SwordState.inactive
 
     def attack(self) -> None:
         if self.is_active:
             return
         self.elapsed_time = 0
         self.player.is_attacking = True
-        self.state = Sword_State.active
+        self.state = SwordState.active
         self.direction = self.player.direction
 
         self.animation = SWORD_ATTACK_LIST[self.direction.value]
@@ -56,12 +60,12 @@ class Sword(Weapons):
     def update_weapon(self, delta: float) -> None:
         self.update_animation()
         self.elapsed_time += delta
-        if self.elapsed_time >= 0.3: # ??
+        if self.elapsed_time >= SWORD_ATTACK_DURATION:
             self.deactivate()
 
     def deactivate(self) -> None:
-        self.state = Sword_State.inactive
+        self.state = SwordState.inactive
         self.player.is_attacking = False
         self.elapsed_time = 0
-        self.player.updt_movement()
-        self.player.updt_animation()
+        self.player.update_movement()
+        self.player.update__animation()

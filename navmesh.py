@@ -1,4 +1,4 @@
-from bat import TILE_SIZE
+from constants import TILE_SIZE
 from arcade import Vec2
 import networkx as nx
 from map import Map, GridCell

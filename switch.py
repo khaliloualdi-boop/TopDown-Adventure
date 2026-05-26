@@ -1,3 +1,4 @@
+from constants import SWITCH_SCALE
 import arcade
 
 TEXTURE_SWITCH_OFF = arcade.load_texture(":resources:/images/tiles/leverLeft.png")
@@ -8,13 +9,13 @@ class Switch(arcade.Sprite):
         texture = TEXTURE_SWITCH_ON if initial_state else TEXTURE_SWITCH_OFF
         super().__init__(
             texture,
-            scale=0.25,
+            scale=SWITCH_SCALE,
             center_x=x,
             center_y=y
         )
         self.is_on = initial_state
         self.id = id
-        
+
     def toggle(self) -> None :
         self.is_on = not self.is_on
 

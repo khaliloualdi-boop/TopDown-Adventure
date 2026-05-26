@@ -6,7 +6,7 @@ from constants import SCALE, TILE_SIZE
 from monster import Monster
 from player import Player
 from bomb import Bomb
-from textures import*
+from textures import *
 from enum import Enum
 
 
@@ -74,7 +74,7 @@ class Boss(Monster):
 
 
 
-    def update_monster(self) -> None:
+    def update_monster(self, delta_time: float) -> None:
         # Ne fait rien si mort (gameview retirera le sprite)
         if self.state == BossState.dead:
             return
@@ -98,7 +98,7 @@ class Boss(Monster):
                     self._enter_state(BossState.idle)
 
             case BossState.dead:
-                if self._state_timer >= 0.8: 
+                if self._state_timer >= 0.8:
                     self.is_alive = False
                     return
 
@@ -123,7 +123,7 @@ class Boss(Monster):
 
     def _draw_health_bar(self) -> None:
 
-        BAR_FULL_WIDTH = TILE_SIZE * 6  
+        BAR_FULL_WIDTH = TILE_SIZE * 6
         BAR_HEIGHT = TILE_SIZE
 
         # Position : au-dessus du boss

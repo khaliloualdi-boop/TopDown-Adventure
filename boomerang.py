@@ -1,4 +1,3 @@
-import textures
 from weapons import *
 from math import sqrt
 from enum import Enum
