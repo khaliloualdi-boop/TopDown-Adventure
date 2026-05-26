@@ -1,6 +1,7 @@
-from constants import Direction, PLAYER_MOVEMENT_SPEED
-from textures import RUNNING_SPRITELIST, IDLE_SPRITELIST
 from weapons import Weapons
+from constants import Direction, PLAYER_MOVEMENT_SPEED, PLAYER_MAX_HP
+from textures import RUNNING_SPRITELIST, IDLE_SPRITELIST
+from healthbar import HealthBar
 import arcade
 
 class Player(arcade.TextureAnimationSprite):
@@ -12,8 +13,8 @@ class Player(arcade.TextureAnimationSprite):
     current_weapon: int
     is_attacking: bool
 
-    def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int, Center_y: int) -> None:
-        super().__init__(animation = Anim, scale = Scale, center_x = Center_x, center_y = Center_y)
+    def __init__(self, animation: arcade.TextureAnimation, scale: float, center_x: int, center_y: int) -> None:
+        super().__init__(animation=animation, scale=scale, center_x=center_x, center_y=center_y)
         self.__direction = Direction.SUD
         self.pressed_keys = set()
         self.horizontal_stack = []
@@ -21,6 +22,7 @@ class Player(arcade.TextureAnimationSprite):
         self.equipped_weapons = []
         self.current_weapon = 0
         self.is_attacking = False
+        self.health_bar = HealthBar(PLAYER_MAX_HP)
 
     @property
     def direction(self) -> Direction:
@@ -44,7 +46,7 @@ class Player(arcade.TextureAnimationSprite):
                     self.current_weapon = (self.current_weapon + 1) % len(self.equipped_weapons)
 
         self.update_movement()
-        self.update__animation()
+        self._select_animation()
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
         self.pressed_keys.discard(symbol)
@@ -54,7 +56,7 @@ class Player(arcade.TextureAnimationSprite):
             self.vertical_stack.remove(symbol)
 
         self.update_movement()
-        self.update__animation()
+        self._select_animation()
 
     def update_movement(self) -> None:
         if self.is_attacking:
@@ -80,7 +82,7 @@ class Player(arcade.TextureAnimationSprite):
         else:
             self.change_y = 0
 
-    def update__animation(self) -> None:
+    def _select_animation(self) -> None:
         if self.change_y > 0:
             self.__direction = Direction.NORD
             if not self.is_attacking:
@@ -100,3 +102,6 @@ class Player(arcade.TextureAnimationSprite):
         else:
             if not self.is_attacking:
                 self.animation = IDLE_SPRITELIST[self.__direction.value]
+
+    def take_hit(self) -> bool:
+        return self.health_bar.take_hit()

@@ -3,6 +3,10 @@ from enum import Enum
 from typing import Final
 import yaml
 
+class MapTheme(Enum):
+    Overworld = "overworld"
+    Dungeon = "dungeon"
+
 class GridCell(Enum):
     Bush = "X"
     Grass = " "
@@ -14,7 +18,7 @@ class GridCell(Enum):
     Switch = "^"
     Gate = "|"
     Blob = "B"
-    CrystalGate = "G"  
+    CrystalGate = "G"
     Chest = "C"
     Boss = "F"
 
@@ -45,9 +49,10 @@ class Map:
     height: int
     player_center_x: int
     player_center_y: int
-    grid: list[list[GridCell]]
-    switches_config: list[dict]
-    gates_config: list[dict]
+    grid: tuple[tuple[GridCell,...],...]
+    switches_config: tuple[dict]
+    gates_config: tuple[dict]
+    theme: MapTheme
 
     def get(self, x: int, y:int) -> GridCell:
         return self.grid[self.height - 1 - y][x]
@@ -58,7 +63,7 @@ def map_extract(doc: str) -> Map:
     width: int
     player_center_x: int | None = None
     player_center_y: int | None = None
-    grid: list[list[GridCell]] = []
+    grid: list[tuple[GridCell,...]] = []
 
     if "---" not in doc:
         raise Exception("Format de carte invalide : absence de séparation")
@@ -76,15 +81,17 @@ def map_extract(doc: str) -> Map:
     switches_config = config.get("switches", [])
     gates_config = config.get("gates", [])
 
+    theme = MapTheme(config.get("theme", "overworld"))
+
     lines = [line.rstrip("\n") for line in grid_doc.splitlines()]
     lines = [line for line in lines if line.strip() and line.strip() != "---"]
 
     if len(lines) != height:
-        raise Exception(f"Format de carte invalide : nombre de ligne attendu : {height} nombre obtenu : {len(lines)}.")
+        raise ValueError(f"Format de carte invalide : nombre de ligne attendu : {height} nombre obtenu : {len(lines)}.")
 
     for y, line in enumerate(lines):
         if len(line) != width:
-            raise Exception(f"Format de carte invalide : largeur attendue {width} sur la ligne {y}, obtenue {len(line)}.")
+            raise ValueError(f"Format de carte invalide : largeur attendue {width} sur la ligne {y}, obtenue {len(line)}.")
 
         characters: list[GridCell] = []
 
@@ -94,9 +101,9 @@ def map_extract(doc: str) -> Map:
                 characters.append(conversion[" "])  # le point d'apparition est traité comme de l'herbe
             else:
                 if char not in conversion:
-                    raise Exception(f"Caractère inconnu '{char}' à la position ({x}, {y}).")
+                    raise ValueError(f"Caractère inconnu '{char}' à la position ({x}, {y}).")
                 characters.append(conversion[char])
-        grid.append(characters)
+        grid.append(tuple(characters))
 
     if player_center_x is None or player_center_y is None:
         raise Exception("Format de carte invalide : aucun point de départ 'P' trouvé.")
@@ -106,9 +113,10 @@ def map_extract(doc: str) -> Map:
         height,
         player_center_x,
         player_center_y,
-        grid,
-        switches_config=switches_config,
-        gates_config=gates_config
+        tuple(grid),
+        switches_config = tuple(switches_config),
+        gates_config = tuple(gates_config),
+        theme = theme
     )
 
 def load_map(file: str) -> Map:
@@ -118,14 +126,3 @@ def load_map(file: str) -> Map:
 
 MAP_DECOUVERTE = load_map("maps/map1.txt")
 MAP_BOSS = load_map("maps/map2.txt")
-# 1. lire le fichier
-# 2. separer la partie config et la partie map
-# 3. determiner les dimensions de la carte
-# 4. stocker les caracteres un par un sous a forme de vecteur (x, y , char)
-# 5. methode de conversion char -> GridCell
-# 6. Créer les erreurs possibles :
-    # Height non respectée
-    # Width non respectée
-    # charactère non defini
-    # non presence de 'P'
-    # format non repsecté (ex: non presence de "---")

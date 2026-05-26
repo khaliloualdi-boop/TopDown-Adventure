@@ -1,23 +1,28 @@
 from __future__ import annotations
+from typing import Final
 from arcade.math import clamp
 from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect, TextureAnimation, Texture
-from typing import Final
 import arcade
-from map import *
-from constants import *
-from textures import *
-from spinner import *
-from player import *
-from boomerang import *
-from bat import *
-from spinner import Spinner
+import networkx as nx
+
+from map import Map, GridCell, MapTheme, MAP_DECOUVERTE, MAP_BOSS
+from constants import SCALE, TILE_SIZE, MAX_WINDOW_WIDTH, MAX_WINDOW_HEIGHT, grid_to_pixels, HOLE_FALL_DISTANCE
+from textures import (
+    TEXTURE_GRASS, TEXTURE_BUSH, TEXTURE_HOLE,
+    ANIMATION_CRISTAUX, ICON_BOOMERANG, ICON_SWORD,
+    ICON_ITEM_BOX, ANIMATION_PLAYER_IDLE_DOWN,
+    ANIMATION_BOOMERANG, ANIMATION_BLOB, ANIMATION_BAT, TEXTURE_DUNGEON_FLOOR, TEXTURE_DUNGEON_WALL
+)
+from spinner import Spinner, compute_horizontal_limits, compute_vertical_limits
+from player import Player
+from boomerang import Boomerang, BoomerangState
+from bat import Bat
+from blob import Blob
+from sword import Sword
 from monster import Monster, MonsterState
 from switch import Switch
 from gate import Gate
-from sword import *
-from weapons import *
-from navmesh import *
-from blob import *
+from navmesh import create_graph
 from boss import Boss
 from chest import Chest, ChestState
 from crystal_gate import CrystalGate
@@ -83,23 +88,25 @@ class GameView(arcade.View):
         self.holes = arcade.SpriteList(use_spatial_hash=True)
         self.switches = arcade.SpriteList(use_spatial_hash=True)
         self.gates = arcade.SpriteList(use_spatial_hash=True)
-        self.bosses = arcade.SpriteList(use_spatial_hash=True)
         self.chests = arcade.SpriteList(use_spatial_hash=True)
         self.crystal_gates = arcade.SpriteList(use_spatial_hash=True)
         self.game_won = False
         self.score = 0
         self.boss_room_entered = (map is MAP_BOSS)
 
+        floor_texture = TEXTURE_DUNGEON_FLOOR if map.theme == MapTheme.Dungeon else TEXTURE_GRASS
+        wall_texture  = TEXTURE_DUNGEON_WALL  if map.theme == MapTheme.Dungeon else TEXTURE_BUSH
+
         for i in range(map.width):
             for j in range(map.height):
 
-                self.ground.append(arcade.Sprite(TEXTURE_GRASS, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j),))
+                self.ground.append(arcade.Sprite(floor_texture, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j),))
                 cell = map.get(i, j)
 
                 if cell == GridCell.Bush:
                     self.wall.append(
                         arcade.Sprite(
-                            TEXTURE_BUSH,
+                            wall_texture,
                             scale=SCALE,
                             center_x=grid_to_pixels(i),
                             center_y=grid_to_pixels(j),
@@ -174,12 +181,13 @@ class GameView(arcade.View):
 
                 elif cell == GridCell.Boss:
                     boss = Boss(
-                        cx=grid_to_pixels(i),
-                        cy=grid_to_pixels(j),
+                        center_x=grid_to_pixels(i),
+                        center_y=grid_to_pixels(j),
                         player=self.player,
                         obstacles=self.wall,    # les buissons bloquent la vue
+                        chests=self.chests
                     )
-                    self.bosses.append(boss)
+                    self.monsters.append(boss)
 
         # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
@@ -187,9 +195,6 @@ class GameView(arcade.View):
         #Cameras :
         self.camera = arcade.camera.Camera2D()
         self.ui_camera = arcade.camera.Camera2D()
-
-        #Score :
-        self.score = 0
 
 
     def on_show_view(self) -> None:
@@ -208,16 +213,12 @@ class GameView(arcade.View):
             self.gates.draw(pixelated=True)
             self.crystals.draw(pixelated=True)
             self.monsters.draw(pixelated=True)
-            self.bosses.draw(pixelated=True)
             self.crystal_gates.draw(pixelated=True)
             self.chests.draw(pixelated=True)
 
-            for boss in self.bosses:
-                boss.draw_extras()    # bombes + marqueurs + barre de vie
+            for monster in self.monsters:
+                monster.draw_extras()    # bombes + marqueurs + barre de vie
 
-                # Barre de vie du boss
-                for boss in self.bosses:
-                    boss.draw_extras()
 
             if not self.sword.is_active: # ATTACKS FROM THE BACK STILL HIT THE PLAYER
                 arcade.draw_sprite(self.player, pixelated=True)
@@ -232,12 +233,11 @@ class GameView(arcade.View):
             x = self.window.width - 48
             y = self.window.height - 48
 
-            # draw item box background
             arcade.draw_texture_rect(
                 ICON_ITEM_BOX,
                 arcade.LBWH(x, y, 32, 32)
             )
-            # draw weapon icon on top
+
             arcade.draw_texture_rect(
                 self.weapons_icons[self.player.current_weapon],
                 arcade.LBWH(x + 8, y + 8, 32, 32)  # slight padding inside box
@@ -252,6 +252,11 @@ class GameView(arcade.View):
                     font_size=40,
                     anchor_x="center",
                 ).draw()
+
+            self.player.health_bar.draw(
+                self.window.width /2,
+                self.window.height - TILE_SIZE
+            )
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         if symbol == arcade.key.SPACE:
@@ -280,6 +285,8 @@ class GameView(arcade.View):
 
         current.update_weapon(delta_time)
 
+        self.player.health_bar.update(delta_time)
+
     # Monsters :
 
         to_remove = []
@@ -293,6 +300,7 @@ class GameView(arcade.View):
                 monster.update_animation()
 
         for monster in to_remove:
+            monster.on_death()
             self.monsters.remove(monster)
 
     # Crystals :
@@ -311,11 +319,18 @@ class GameView(arcade.View):
 
             for monster in arcade.check_for_collision_with_list(current, self.monsters, 3):
                 if monster.death_state == MonsterState.alive:
-                        monster.start_dying()
+                        monster.take_hit()
 
 
         if any(monster.death_state == MonsterState.alive for monster in arcade.check_for_collision_with_list(self.player, self.monsters)):
-            self.window.show_view(GameView(MAP_DECOUVERTE))
+            if self.player.take_hit():
+                self.window.show_view(GameView(MAP_DECOUVERTE))
+
+        for monster in self.monsters:
+            if monster.projectile_hits_player(self.player):
+                if self.player.take_hit():
+                    self.window.show_view(GameView(MAP_DECOUVERTE))
+
 
         if self.boomerang.state == BoomerangState.launching:
             for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
@@ -331,40 +346,13 @@ class GameView(arcade.View):
             if self.boomerang.state == BoomerangState.launching:
                 self.boomerang.start_returning()
 
-        switches_dict = {s.id: s for s in self.switches if s.id is not None}  # il faut ajouter l'attribut `id` à Switch
+        switches_dict = {s.switch_id: s for s in self.switches if s.switch_id is not None}
         for gate in self.gates:
             gate.update_state(switches_dict)
             if gate.is_open and gate in self.wall:
                 self.wall.remove(gate)
             if not gate.is_open and gate not in self.wall:
                 self.wall.append(gate)
-
-        for boss in list(self.bosses):
-            boss.update_monster()
-            boss.update_boss(delta_time)
-
-            for bomb in boss.bombs:
-                if bomb.hits_player(self.player):
-                    self.window.show_view(GameView(MAP_DECOUVERTE))
-                    return
-
-            if not boss.is_alive:
-                self.bosses.remove(boss)
-                for chest in self.chests:
-                    if not chest.is_open and chest.state == ChestState.closed:
-                        chest.open()
-
-        if current.is_active:
-            for boss in list(self.bosses):
-                if arcade.check_for_collision(current, boss):
-                    boss.take_hit()
-                if not boss.is_alive:
-                    self.bosses.remove(boss)
-                    for chest in self.chests:
-                        chest.open()
-
-        if arcade.check_for_collision_with_list(self.player, self.bosses):
-            self.window.show_view(GameView(MAP_DECOUVERTE))
 
         # --- Joueur atteint le coffre ouvert ---
         for chest in self.chests:

@@ -1,15 +1,15 @@
 from textures import DEATH_ANIMATION_BAT
+from constants import SCALE, TILE_SIZE, BAT_SPEED, MONSTER_DEATH_DURATION
+from monster import Monster, MonsterState
 import arcade
 import random
-from arcade import Vec2
-from constants import *
 import math
-from monster import Monster
+from arcade import Vec2
 
 class Bat(Monster):
 
-    Death_animation = DEATH_ANIMATION_BAT
-    Death_duration = MONSTER_DEATH_DURATION
+    death_animation = DEATH_ANIMATION_BAT
+    death_duration = MONSTER_DEATH_DURATION
 
     def __init__(self, x: int, y: int, animation: arcade.TextureAnimation, map_width: int, map_height: int) -> None:
         super().__init__(

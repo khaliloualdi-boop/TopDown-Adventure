@@ -1,7 +1,6 @@
-from constants import TILE_SIZE
-from arcade import Vec2
 import networkx as nx
 from map import Map, GridCell
+from constants import TILE_SIZE
 
 
 type path = list[tuple[int, int]]
@@ -34,14 +33,14 @@ def create_graph(map: Map) -> nx.Graph[tuple[int, int]]:
 
     for node in walkables:
         x , y = node
-        for k in [-2, 0, 2]:
-            for p in [-2, 0, 2]:
+        for k in (-2, 0, 2):
+            for p in (-2, 0, 2):
                 if k == 0 and p == 0:
                     continue
                 neighbor = (x + k, y + p)
                 if neighbor in walkables:
-                    Weight = 1.414 if k != 0 and p != 0 else 1
-                    graph.add_edge((x,y), neighbor, weight = Weight)
+                    weight = 1.414 if k != 0 and p != 0 else 1
+                    graph.add_edge((x,y), neighbor, weight = weight)
 
     return graph
 

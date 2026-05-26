@@ -1,11 +1,10 @@
-from boomerang import Direction
-from arcade import TextureAnimationSprite
-from weapons import *
-from enum import Enum
-from textures import SWORD_ATTACK_LIST, IDLE_SPRITELIST
+from weapons import Weapons
 from constants import SCALE, TILE_SIZE, SWORD_ATTACK_DURATION, Direction
 from player import Player
+from textures import SWORD_ATTACK_LIST
+from enum import Enum
 import arcade
+
 
 SWORD_OFFSET = TILE_SIZE  # Dash du player
 
@@ -20,7 +19,7 @@ class Sword(Weapons):
     elapsed_time: float
 
     def __init__(self, player: Player) -> None:
-        super().__init__(animation = SWORD_ATTACK_LIST[0], scale = SCALE, cx = 0, cy = 0)
+        super().__init__(animation=SWORD_ATTACK_LIST[0], scale=SCALE, center_x=0, center_y=0)
         self.player = player
         self.state = SwordState.inactive
         self.elapsed_time = 0
@@ -68,4 +67,4 @@ class Sword(Weapons):
         self.player.is_attacking = False
         self.elapsed_time = 0
         self.player.update_movement()
-        self.player.update__animation()
+        self.player._select_animation()

@@ -12,8 +12,8 @@ class SpinnerLimits:
 
 class Spinner(Monster):
 
-    Death_animation = DEATH_ANIMATION_SPINNER
-    Death_duration = MONSTER_DEATH_DURATION
+    death_animation = DEATH_ANIMATION_SPINNER
+    death_duration = MONSTER_DEATH_DURATION
 
     def __init__(self, x: int, y: int, is_horizontal: bool, limits: SpinnerLimits) -> None:
 

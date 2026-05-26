@@ -1,10 +1,11 @@
+from textures import TEXTURE_GATE_OPEN, TEXTURE_GATE_CLOSED
+from constants import SCALE
+from switch import Switch
 import arcade
-from textures import *
-from switch import*
 
 class Gate(arcade.Sprite):
-    def __init__(self, x, y, open_if= None) -> None:
-        super().__init__(TEXTURE_GATE_CLOSED, scale=2, center_x=x, center_y=y)
+    def __init__(self, x : int, y : int, open_if: dict | None = None) -> None:
+        super().__init__(TEXTURE_GATE_CLOSED, scale=SCALE, center_x=x, center_y=y)
         self.is_open = False
         self.open_if = open_if  # formule YAML de la config
 

@@ -1,10 +1,9 @@
-from weapons import *
-from math import sqrt
+from weapons import Weapons
+from constants import BOOMERANG_SPEED, TILE_SIZE, Direction
+from player import Player
 from enum import Enum
 import arcade
-from constants import *
 from arcade import Vec2
-from player import *
 
 class BoomerangState(Enum):
     inactive = 0
@@ -17,8 +16,8 @@ class Boomerang(Weapons):
     direction: Direction
     player: Player
 
-    def __init__(self, Anim: arcade.TextureAnimation, Scale: float, Center_x: int | float, Center_y: int | float, player: Player) -> None:
-        super().__init__(animation = Anim, scale = Scale, cx = Center_x, cy = Center_y)
+    def __init__(self, animation: arcade.TextureAnimation, scale: float, center_x: int | float, center_y: int | float, player: Player) -> None:
+        super().__init__(animation=animation, scale=scale, center_x=center_x, center_y=center_y)
         self.state = BoomerangState.inactive
         self.player = player
         self.direction = self.player.direction
@@ -44,7 +43,7 @@ class Boomerang(Weapons):
             case BoomerangState.launching:
                 self.center_x += self.change_x
                 self.center_y += self.change_y
-                if self.distance_from_point(self.origin) >= 8 * TILE_SIZE:
+                if arcade.math.get_distance(self.center_x, self.center_y, self.origin.x, self.origin.y) >= 8 * TILE_SIZE:
                     self.start_returning()
 
             case BoomerangState.returning:
@@ -52,14 +51,10 @@ class Boomerang(Weapons):
                 self.center_x += self.change_x
                 self.center_y += self.change_y
 
-                if self.distance_from_point(Vec2(self.player.center_x, self.player.center_y)) <= TILE_SIZE/2:
+                if arcade.math.get_distance(self.center_x, self.center_y, self.player.center_x, self.player.center_y) <= TILE_SIZE/2:
                     self.deactivate()
 
         self.update_animation()
-
-
-    def distance_from_point(self, vec: Vec2) -> float:
-        return sqrt((self.center_x - vec.x)**2 + (self.center_y - vec.y)**2)
 
     def set_change(self, direction: Direction) -> None:
         self.change_x = 0

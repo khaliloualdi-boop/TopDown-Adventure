@@ -2,7 +2,7 @@
 from __future__ import annotations
 from enum import Enum
 import arcade
-from constants import SCALE
+from constants import SCALE, CHEST_OPENING_DURATION
 from textures import (
     ANIMATION_CHEST_OPENING,
     ANIMATION_CHEST_IDLE,
@@ -55,7 +55,7 @@ class Chest(arcade.TextureAnimationSprite):
             case ChestState.opening:
                 self._elapsed += delta
                 self.update_animation()
-                if self._elapsed >= 0.75:
+                if self._elapsed >= CHEST_OPENING_DURATION:
                     self.state = ChestState.open
                     self.texture = TEXTURE_CHEST_OPEN
             case ChestState.open:

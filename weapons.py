@@ -5,8 +5,8 @@ from enum import Enum
 
 class Weapons(ABC, arcade.TextureAnimationSprite):
 
-    def __init__(self, animation : arcade.TextureAnimation, scale : float, cx : float, cy: float) -> None:
-        super().__init__(animation = animation, scale = scale, center_x = cx, center_y = cy)
+    def __init__(self, animation: arcade.TextureAnimation, scale: float, center_x: float, center_y: float) -> None:
+        super().__init__(animation=animation, scale=scale, center_x=center_x, center_y=center_y)
 
     @property
     def collects_crystals(self) -> bool:

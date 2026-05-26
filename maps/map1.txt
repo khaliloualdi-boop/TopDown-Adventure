@@ -27,20 +27,21 @@ gates:
           - switch_is_on: first
         - not:
           - switch_is_on: second
+theme: overworld
 ---
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-x  *               S     x             x
-x        v               x    *   *    x
-x    B                 * x             x
+x                  S     x             x
+x        v               x             x
+x    B                   x             x
 x         s        xxxxxxx      v     sx
-x     xxx *   xx                       x
+x     xxx     xx                       x
 x                            xxx       x
 x^   |       xxxxxxxxxx        x       x
-x       ^ *                    x   *   x
-x      S              S     *  x       x
-x  *       v    *              O       x
+x       ^                      x       x
+x      S              S        x       x
+x  *       v                   O       x
 x         |                       v    x
 x  O  xx     s        xs               x
-xG  P      *           x       *       x
+xG  P                 x                x
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ---

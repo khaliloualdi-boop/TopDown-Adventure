@@ -66,8 +66,11 @@ _dungeon_grid = _load_grid("assets/Top_Down_Adventure_Pack_v.1.0/Dungeon_Tileset
 TEXTURE_GRASS: Final[arcade.Texture] = _overworld_grid[18*1 + 6]
 TEXTURE_BUSH: Final[arcade.Texture] = _overworld_grid[18*3 + 5]
 TEXTURE_HOLE: Final[arcade.Texture] = _overworld_grid[18*4 + 8]
-TEXTURE_GATE_OPEN = _dungeon_grid[13*4 + 8]
-TEXTURE_GATE_CLOSED = _dungeon_grid[13*7 + 8]
+TEXTURE_GATE_OPEN: Final[arcade.Texture] = _dungeon_grid[13*4 + 8]
+TEXTURE_GATE_CLOSED: Final[arcade.Texture] = _dungeon_grid[13*7 + 8]
+TEXTURE_DUNGEON_FLOOR: Final[arcade.Texture] = _dungeon_grid[13*11 + 4]
+TEXTURE_DUNGEON_WALL:  Final[arcade.Texture] = _dungeon_grid[13*1 + 2]
+
 # Idle animations :
 
 ANIMATION_PLAYER_IDLE_DOWN: Final[arcade.TextureAnimation] = \

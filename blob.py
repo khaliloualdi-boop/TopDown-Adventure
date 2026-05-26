@@ -1,18 +1,19 @@
 from textures import DEATH_ANIMATION_BLOB
-from constants import *
-from typing import Final
+from constants import SCALE, TILE_SIZE, BLOB_SPEED, MONSTER_DEATH_DURATION, grid_to_pixels
 from monster import Monster
-from navmesh import *
-import random
+from navmesh import build_patrol_sub_graph, get_path, pixel_to_subnode, subnode_to_pixel, SUBDIVISIONS, path
 from player import Player
-from math import sqrt
+from typing import Final
 import arcade
+import random
+import networkx as nx
+from arcade import Vec2
 
 
 class Blob(Monster):
 
-    Death_animation = DEATH_ANIMATION_BLOB
-    Death_duration = MONSTER_DEATH_DURATION
+    death_animation = DEATH_ANIMATION_BLOB
+    death_duration = MONSTER_DEATH_DURATION
 
     patrol_graph: Final[nx.Graph[tuple[int, int]]]
     current_path: path
@@ -21,12 +22,12 @@ class Blob(Monster):
     obstacles: Final[arcade.SpriteList]
     __attack: bool
 
-    def __init__(self, Animation: arcade.TextureAnimation, cx: int, cy: int, map_graph: nx.Graph[tuple[int, int]], player: Player, Obstacles: arcade.SpriteList) -> None:
-        super().__init__(animation = Animation, scale = SCALE, center_x = grid_to_pixels(cx), center_y = grid_to_pixels(cy))
-        self.patrol_graph = build_patrol_sub_graph(map_graph, (cx, cy))
+    def __init__(self, animation: arcade.TextureAnimation, center_x: int, center_y: int, map_graph: nx.Graph[tuple[int, int]], player: Player, obstacles: arcade.SpriteList) -> None:
+        super().__init__(animation=animation, scale=SCALE, center_x=grid_to_pixels(center_x), center_y=grid_to_pixels(center_y))
+        self.patrol_graph = build_patrol_sub_graph(map_graph, (center_x, center_y))
         self.current_path = []
         self.player = player
-        self.obstacles = Obstacles
+        self.obstacles = obstacles
         self.__attack = False
         self.last_known_player_node: tuple[int, int] | None = None
 
@@ -83,10 +84,13 @@ class Blob(Monster):
             return
 
         if self.current_path == []:
-            self.choose_random_destination()
+            if not self.is_attacking:
+                self.choose_random_destination()
             return
 
-        if self.distance_from_point(Vec2(subnode_to_pixel(self.current_path[0][0]),subnode_to_pixel(self.current_path[0][1]))) <= TILE_SIZE / (2 * SUBDIVISIONS):
+        target_x = subnode_to_pixel(self.current_path[0][0])
+        target_y = subnode_to_pixel(self.current_path[0][1])
+        if arcade.math.get_distance(self.center_x, self.center_y, target_x, target_y) <= TILE_SIZE / (2 * SUBDIVISIONS):
             self.current_path.pop(0)
             return
 
@@ -94,7 +98,3 @@ class Blob(Monster):
             self.move_to_next_node(self.current_path[0])
             self.center_x += self.change_x
             self.center_y += self.change_y
-
-
-    def distance_from_point(self, vec: Vec2) -> float:
-        return sqrt((self.center_x - vec.x)**2 + (self.center_y - vec.y)**2)
