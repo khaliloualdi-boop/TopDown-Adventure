@@ -11,18 +11,14 @@ from textures import (
 
 
 class ChestState(Enum):
-    closed  = 0   # animation idle en boucle
-    opening = 1   # animation d'ouverture (une seule fois)
-    open    = 2   # texture statique, le joueur peut "gagner"
+    """États du coffre : fermé, en cours d'ouverture, ou ouvert."""
+    closed  = 0
+    opening = 1
+    open    = 2
 
 
 class Chest(arcade.TextureAnimationSprite):
-    """
-    Coffre animé à trois états.
-    - Fermé : animation idle en boucle.
-    - Ouverture : déclenchée quand le boss meurt, animation one-shot.
-    - Ouvert : texture statique, collision avec le joueur = victoire.
-    """
+    """Coffre animé à trois états ; s'ouvre à la mort du boss et déclenche la victoire au contact du joueur."""
 
     state: ChestState
     _elapsed: float

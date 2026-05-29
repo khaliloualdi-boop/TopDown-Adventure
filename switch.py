@@ -5,6 +5,7 @@ TEXTURE_SWITCH_OFF = arcade.load_texture(":resources:/images/tiles/leverLeft.png
 TEXTURE_SWITCH_ON = arcade.load_texture(":resources:/images/tiles/leverRight.png")
 
 class Switch(arcade.Sprite):
+    """Sprite interactif que le joueur peut activer ; son état alimente les conditions des gates."""
     def __init__(self, x: int, y: int, initial_state: bool = False, switch_id: str | None = None) -> None :
         texture = TEXTURE_SWITCH_ON if initial_state else TEXTURE_SWITCH_OFF
         super().__init__(

@@ -1,4 +1,3 @@
-from __future__ import annotations
 from typing import Final
 import arcade
 from constants import TILE_SIZE
@@ -7,6 +6,7 @@ from textures import TEXTURE_HEALTH_BAR, TEXTURE_HEALTH_HUB
 INVINCIBILITY_DURATION = 1.5
 
 class HealthBar:
+    """Gère les points de vie, l'invincibilité temporaire après un coup, et l'affichage de la barre."""
 
     def __init__(self, max_hp: int) -> None:
         self.max_hp: Final[int] =  max_hp
@@ -26,23 +26,21 @@ class HealthBar:
             self.__invincibility_timer -= delta_time
 
 
-    def draw(self, center_x: float, center_y: float) -> None:
-        FRAME_WIDTH = TILE_SIZE * 5
-        BAR_WIDTH   = TILE_SIZE * 4
-        BAR_HEIGHT  = TILE_SIZE
-
+    def draw(self, center_x: float, center_y: float, scale: float = 1.0) -> None:
+        frame_width = TILE_SIZE * 5 * scale
+        bar_width   = TILE_SIZE * 4 * scale
+        bar_height  = TILE_SIZE * scale
 
         fill_ratio = max(self.hp / self.max_hp, 0)
         if fill_ratio > 0:
-            fill_width = BAR_WIDTH * fill_ratio
-            fill_cx = center_x - BAR_WIDTH / 2 + fill_width / 2
+            fill_width = bar_width * fill_ratio
+            fill_cx = center_x - bar_width / 2 + fill_width / 2
             arcade.draw_texture_rect(
                 TEXTURE_HEALTH_HUB,
-                arcade.XYWH(fill_cx, center_y, fill_width, BAR_HEIGHT)
+                arcade.XYWH(fill_cx, center_y, fill_width, bar_height)
             )
-
 
         arcade.draw_texture_rect(
             TEXTURE_HEALTH_BAR,
-            arcade.XYWH(center_x, center_y, FRAME_WIDTH, BAR_HEIGHT)
+            arcade.XYWH(center_x, center_y, frame_width, bar_height)
         )

@@ -6,9 +6,11 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "arcade>=3.3.3",
+    "matplotlib>=3.10.9",
     "networkx>=3.6.1",
     "pillow>=11.3.0",
     "pyyaml>=6.0.3",
+    "ruamel-yaml>=0.19.1",
     "types-networkx>=3.6.1.20260408",
 ]
 [tool.ruff.lint]
@@ -18,5 +20,6 @@ select = ["ANN"]
 dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.2",
+    "snakeviz>=2.2.2",
     "ty>=0.0.18",
 ]

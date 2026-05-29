@@ -1,0 +1,38 @@
+from crystal_gate import*
+from map import map_extract, GridCell
+ 
+
+def _make_crystal_gate() -> CrystalGate:
+    """Crée une CrystalGate factice sans Arcade."""
+    cg = object.__new__(CrystalGate)
+    cg.is_open = False
+    return cg
+ 
+ # Vérifie que la map contient bien une crystal gate à la bonne position
+def test_map_contains_crystal_gate() -> None:
+    doc = (
+        "width: 3\n"
+        "height: 1\n"
+        "---\n"
+        "GP*\n"
+    )
+    m = map_extract(doc)
+    assert m.get(0, 0) == GridCell.CrystalGate
+
+# Vérifie que la crystal gate est fermée au départ
+def test_crystal_gate_initially_closed() -> None:
+    cg = _make_crystal_gate()
+    assert cg.is_open is False
+ 
+ 
+# Vérifie que la crystal gate reste fermée s'il reste des cristaux
+def test_crystal_gate_stays_closed_with_crystals() -> None:
+    cg = _make_crystal_gate()
+    cg.update_state(3)
+    assert cg.is_open is False
+
+# Vérifie que la crystal gate s'ouvre quand crystal_count == 0
+def test_crystal_gate_opens_when_no_crystals() -> None:
+    cg = _make_crystal_gate()
+    cg.update_state(0)
+    assert cg.is_open is True

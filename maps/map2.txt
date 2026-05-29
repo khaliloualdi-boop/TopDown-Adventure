@@ -6,20 +6,19 @@ theme: dungeon
 ---
 xxxxxxxxxxxxxxxxxxxxxx
 x                    x
+x    S     F    S    x
 x                    x
-x                    x
-x                    x
-x                    x
-x                    x
-x                    x
-x         F          x
-x                    x
+x     B         B    x
+x    s           s   x
 x                    x
 x                    x
 x         C          x
 x                    x
+x       B            x
+x                    x
+x  S               S x
 x                    x
 x                    x
+x     s         s    x
 x         P          x
 xxxxxxxxxxxxxxxxxxxxxx
----

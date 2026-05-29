@@ -7,6 +7,7 @@ import math
 from arcade import Vec2
 
 class Bat(Monster):
+    """Monstre volant (pas de collisions avec les bushs) à déplacement aléatoire borné autour de sa position d'origine."""
 
     death_animation = DEATH_ANIMATION_BAT
     death_duration = MONSTER_DEATH_DURATION
@@ -19,22 +20,17 @@ class Bat(Monster):
             center_y=y
         )
 
-        # Position d'origine
         self.origin = Vec2(x, y)
-
-        # Rayon du champ d'action
         self.radius = 3 * TILE_SIZE
 
-        # Limites de la map en pixels (on exclut la tuile de bord, comme les spinners)
+        # Limites en pixels : on exclut la tuile de bord pour éviter les sorties de map
         self.min_x = TILE_SIZE
         self.max_x = map_width - TILE_SIZE
         self.min_y = TILE_SIZE
         self.max_y = map_height - TILE_SIZE
 
-        # Générateur aléatoire
         self.rng = random.Random()
 
-        # Direction initiale aléatoire
         angle = self.rng.uniform(0, 2 * math.pi)
         self.change_x = BAT_SPEED * math.cos(angle)
         self.change_y = BAT_SPEED * math.sin(angle)

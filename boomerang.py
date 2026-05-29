@@ -6,11 +6,13 @@ import arcade
 from arcade import Vec2
 
 class BoomerangState(Enum):
+    """États possibles du boomerang"""
     inactive = 0
     launching = 1
     returning = 2
 
 class Boomerang(Weapons):
+    """Projectile lancé dans la direction du joueur qui revient automatiquement à son point d'origine même en cas de mouvement du joueur."""
     state: BoomerangState
     origin: Vec2
     direction: Direction
@@ -22,7 +24,6 @@ class Boomerang(Weapons):
         self.player = player
         self.direction = self.player.direction
 
-    #test si le boomerang est actif
     @property
     def is_active(self) -> bool:
         return self.state != BoomerangState.inactive
@@ -87,5 +88,6 @@ class Boomerang(Weapons):
 
     def deactivate(self) -> None:
         self.state = BoomerangState.inactive
+        self._toggled_switches.clear()
         self.change_x = 0
         self.change_y = 0

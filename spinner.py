@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from textures import ANIMATION_SPINNER, DEATH_ANIMATION_SPINNER
 from monster import Monster
@@ -7,10 +8,12 @@ from constants import SPINNER_SPEED, SCALE, grid_to_pixels, MONSTER_DEATH_DURATI
 
 @dataclass
 class SpinnerLimits:
+    """Bornes min/max de déplacement d'un spinner sur son axe."""
     min_pos: int
     max_pos: int
 
 class Spinner(Monster):
+    """Spinner : se déplace en ligne droite et rebondit sur les buissons."""
 
     death_animation = DEATH_ANIMATION_SPINNER
     death_duration = MONSTER_DEATH_DURATION
@@ -56,35 +59,23 @@ class Spinner(Monster):
                 self.center_y = grid_to_pixels(self.limits.max_pos)
                 self.change_y *= -1
 
-def compute_horizontal_limits(game_map: Map, x: int, y: int) -> SpinnerLimits:
-    """
-    Calcule les limites gauche/droite d’un spinner horizontal.
-    """
+def compute_limits(game_map: Map, x: int, y: int, is_horizontal: bool) -> SpinnerLimits:
+    axis: tuple[int, int, Callable[[int], GridCell]]
 
-    left = x
-    while left - 1 >= 0 and game_map.get(left - 1, y) != GridCell.Bush:
-        left -= 1
+    match is_horizontal:
+        case True:
+            axis = (x, game_map.width,  lambda p: game_map.get(p, y))
+        case False:
+            axis = (y, game_map.height, lambda p: game_map.get(x, p))
 
-    right = x
-    while right + 1 < game_map.width and game_map.get(right + 1, y) != GridCell.Bush:
-        right += 1
+    pos, limit, get = axis
 
-    return SpinnerLimits(left, right)
+    low = pos
+    while low - 1 >= 0 and get(low - 1) != GridCell.Bush:
+        low -= 1
 
+    high = pos
+    while high + 1 < limit and get(high + 1) != GridCell.Bush:
+        high += 1
 
-def compute_vertical_limits(game_map: Map, x: int, y: int) -> SpinnerLimits:
-    """
-    Calcule les limites haut/bas d’un spinner vertical.
-    """
-
-
-    bottom = y
-    while bottom - 1 >= 0 and game_map.get(x, bottom - 1) != GridCell.Bush:
-        bottom -= 1
-
-
-    top = y
-    while top + 1 < game_map.height and game_map.get(x, top + 1) != GridCell.Bush:
-        top += 1
-
-    return SpinnerLimits(bottom, top)
+    return SpinnerLimits(low, high)

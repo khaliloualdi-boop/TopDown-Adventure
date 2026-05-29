@@ -147,8 +147,8 @@ SWORD_ATTACK_LIST = [
     ANIMATION_PLAYER_ATTACK_LEFT
 ]
 ICON_BOOMERANG: Final[arcade.Texture] = _load_grid("assets/provided/boomerang-sheet.png", 8, 1)[0]
-ICON_SWORD: Final[arcade.Texture] = arcade.load_texture("assets/Sword Icon from Project Plan.png")
-ICON_ITEM_BOX: Final[arcade.Texture] = arcade.load_texture("assets/Top_Down_Adventure_Pack_v.1.0/Hud_Ui/item_box_hud.png")
+ICON_SWORD: Final[arcade.Texture] = ANIMATION_PLAYER_ATTACK_DOWN.keyframes[3].texture
+
 
 ANIMATION_BLOB:  Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkslime_Sprites/pinkslime_run_anim_anim_all_dir_strip_6.png", 6)
@@ -199,3 +199,5 @@ ANIMATION_BOMB_MARKER: Final[arcade.TextureAnimation] = \
 
 DEATH_ANIMATION_BLOB: Final[arcade.TextureAnimation] = \
     _load_animation_strip("assets/Top_Down_Adventure_Pack_v.1.0/Enemies_Sprites/Pinkslime_Sprites/pinkslime_death_anim_all_dir_strip_8.png", 8)
+
+SOUND_CRYSTAL: Final[arcade.Sound] = arcade.load_sound(":resources:sounds/coin5.wav")

@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 WINDOW_TITLE = "Adventure"
 """Title of the main window."""
 

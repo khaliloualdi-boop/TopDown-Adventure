@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Final
+from weapons import Weapons
+from typing import Final, assert_never
 from arcade.math import clamp
 from arcade import PhysicsEngineSimple, TextureAnimationSprite, SpriteList, Rect, TextureAnimation, Texture
 import arcade
@@ -10,10 +11,11 @@ from constants import SCALE, TILE_SIZE, MAX_WINDOW_WIDTH, MAX_WINDOW_HEIGHT, gri
 from textures import (
     TEXTURE_GRASS, TEXTURE_BUSH, TEXTURE_HOLE,
     ANIMATION_CRISTAUX, ICON_BOOMERANG, ICON_SWORD,
-    ICON_ITEM_BOX, ANIMATION_PLAYER_IDLE_DOWN,
-    ANIMATION_BOOMERANG, ANIMATION_BLOB, ANIMATION_BAT, TEXTURE_DUNGEON_FLOOR, TEXTURE_DUNGEON_WALL
+    ANIMATION_PLAYER_IDLE_DOWN,
+    ANIMATION_BOOMERANG, ANIMATION_BLOB, ANIMATION_BAT, TEXTURE_DUNGEON_FLOOR, TEXTURE_DUNGEON_WALL,
+    SOUND_CRYSTAL
 )
-from spinner import Spinner, compute_horizontal_limits, compute_vertical_limits
+from spinner import Spinner, compute_limits
 from player import Player
 from boomerang import Boomerang, BoomerangState
 from bat import Bat
@@ -26,9 +28,12 @@ from navmesh import create_graph
 from boss import Boss
 from chest import Chest, ChestState
 from crystal_gate import CrystalGate
+from overlay import Overlay
+from gameover import GameOverView
+from gamewon import GameWonView
 
 class GameView(arcade.View):
-    """Main in-game view."""
+    """Vue principale du jeu : orchestre tous les sprites, la physique, les monstres et les interactions."""
 
     world_width: Final[int]
     world_height: Final[int]
@@ -72,14 +77,12 @@ class GameView(arcade.View):
 
         self.player.equipped_weapons = [self.boomerang, self.sword]
 
-        self.weapons_icons = [
-            ICON_BOOMERANG,
-            ICON_SWORD
-            ]
+        self.weapons_icons = [ICON_BOOMERANG, ICON_SWORD]
+        self.overlay = Overlay(self.weapons_icons)
 
+        # Construit une seule fois : le calcul du graphe est coûteux
         self.map_graph = create_graph(map)
 
-        #Initialize Spritelists :
         self.wall = arcade.SpriteList(use_spatial_hash=True)
         self.ground = arcade.SpriteList(use_spatial_hash=True)
         self.crystals = arcade.SpriteList(use_spatial_hash=True)
@@ -90,7 +93,6 @@ class GameView(arcade.View):
         self.gates = arcade.SpriteList(use_spatial_hash=True)
         self.chests = arcade.SpriteList(use_spatial_hash=True)
         self.crystal_gates = arcade.SpriteList(use_spatial_hash=True)
-        self.game_won = False
         self.score = 0
         self.boss_room_entered = (map is MAP_BOSS)
 
@@ -103,99 +105,79 @@ class GameView(arcade.View):
                 self.ground.append(arcade.Sprite(floor_texture, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j),))
                 cell = map.get(i, j)
 
-                if cell == GridCell.Bush:
-                    self.wall.append(
-                        arcade.Sprite(
-                            wall_texture,
-                            scale=SCALE,
+                match cell:
+                    case GridCell.Grass:
+                        pass
+                    case GridCell.Bush:
+                        self.wall.append(arcade.Sprite(
+                                wall_texture,
+                                scale=SCALE,
+                                center_x=grid_to_pixels(i),
+                                center_y=grid_to_pixels(j),
+                            )
+                        )
+                    case GridCell.Cristal:
+                        self.crystals.append(arcade.TextureAnimationSprite(
+                                animation=ANIMATION_CRISTAUX,
+                                scale=SCALE,
+                                center_x=grid_to_pixels(i),
+                                center_y=grid_to_pixels(j),
+                            )
+                        )
+                    case GridCell.SpinnerH:
+                        limits = compute_limits(map, i, j, True)
+                        self.monsters.append(Spinner(i, j, True, limits))
+
+                    case GridCell.SpinnerV:
+                        limits = compute_limits(map, i, j, False)
+                        self.monsters.append(Spinner(i, j, False, limits))
+
+                    case GridCell.Hole:
+                        self.holes.append(arcade.Sprite(TEXTURE_HOLE, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j)))
+
+                    case GridCell.Bat:
+                        self.monsters.append(Bat(grid_to_pixels(i), grid_to_pixels(j), ANIMATION_BAT, self.world_width, self.world_height))
+
+                    case GridCell.Blob:
+                        self.monsters.append(Blob(ANIMATION_BLOB, i, j, map, self.map_graph, self.player, self.wall))
+
+                    case GridCell.Switch:
+                        switch_conf = next((s for s in map.switches_config if s.x == i and s.y == j), None)
+                        switch_id = switch_conf.id if switch_conf else None
+                        initial_state = switch_conf.state if switch_conf else False
+                        self.switches.append(Switch(grid_to_pixels(i), grid_to_pixels(j), initial_state, switch_id))
+
+                    case GridCell.Gate:
+                        gate_conf = next((g for g in map.gates_config if g.x == i and g.y == j), None)
+                        open_if = gate_conf.open_if if gate_conf else None
+                        gate = Gate(grid_to_pixels(i), grid_to_pixels(j), open_if)
+                        self.gates.append(gate)
+                        self.wall.append(gate)
+
+                    case GridCell.CrystalGate:
+                        cgate = CrystalGate(grid_to_pixels(i), grid_to_pixels(j))
+                        self.crystal_gates.append(cgate)
+                        self.wall.append(cgate)
+
+                    case GridCell.Chest:
+                        self.chests.append(Chest(grid_to_pixels(i), grid_to_pixels(j)))
+
+                    case GridCell.Boss:
+                        self.monsters.append(Boss(
                             center_x=grid_to_pixels(i),
                             center_y=grid_to_pixels(j),
-                        )
-                    )
+                            player=self.player,
+                            obstacles=self.wall,
+                            chests=self.chests
+                        ))
+                    case _:
+                        assert_never(cell)
 
-                elif cell == GridCell.Cristal:
-                    self.crystals.append(
-                        arcade.TextureAnimationSprite(
-                            animation=ANIMATION_CRISTAUX,
-                            scale=SCALE,
-                            center_x=grid_to_pixels(i),
-                            center_y=grid_to_pixels(j),
-                        )
-                    )
-
-                elif cell == GridCell.SpinnerH:
-                    limits = compute_horizontal_limits(map, i, j)
-                    spinner = Spinner(i, j, True, limits)
-                    self.monsters.append(spinner)
-
-                elif cell == GridCell.SpinnerV:
-                    limits = compute_vertical_limits(map, i, j)
-                    spinner = Spinner(i, j, False, limits)
-                    self.monsters.append(spinner)
-
-                elif cell == GridCell.Hole:
-                    self.holes.append(
-                        arcade.Sprite(TEXTURE_HOLE, scale=SCALE, center_x=grid_to_pixels(i), center_y=grid_to_pixels(j),
-                        )
-                    )
-                elif cell == GridCell.Bat:
-                    bat = Bat(grid_to_pixels(i), grid_to_pixels(j), ANIMATION_BAT, self.world_width, self.world_height)
-                    self.monsters.append(bat)
-
-                elif cell == GridCell.Blob:
-                    blob = Blob(ANIMATION_BLOB, i, j, self.map_graph, self.player, self.wall)
-                    self.monsters.append(blob)
-
-                elif cell == GridCell.Switch:
-                    switch_conf = next(
-                        (s for s in map.switches_config if s["x"] == i and s["y"] == j),
-                        None
-                    )
-                    switch_id = switch_conf["id"] if switch_conf else None
-                    initial_state = switch_conf.get("state", False) in ["on", True] if switch_conf else False
-
-                    switch = Switch(
-                        grid_to_pixels(i),
-                        grid_to_pixels(j),
-                        initial_state,
-                        switch_id
-                    )
-                    self.switches.append(switch)
-
-                elif cell == GridCell.Gate:
-                    # retrouver le gate correspondant dans la config YAML
-                    gate_conf = next((g for g in map.gates_config if g["x"] == i and g["y"] == j), None)
-                    open_if = gate_conf["open_if"] if gate_conf else None
-                    gate = Gate(grid_to_pixels(i), grid_to_pixels(j), open_if)
-                    self.gates.append(gate)
-                    self.wall.append(gate)
-
-                elif cell == GridCell.CrystalGate:
-                    cgate = CrystalGate(grid_to_pixels(i), grid_to_pixels(j))
-                    self.crystal_gates.append(cgate)
-                    self.wall.append(cgate)   # fermé au départ = obstacle
-
-                elif cell == GridCell.Chest:
-                    chest = Chest(grid_to_pixels(i), grid_to_pixels(j))
-                    self.chests.append(chest)
-
-                elif cell == GridCell.Boss:
-                    boss = Boss(
-                        center_x=grid_to_pixels(i),
-                        center_y=grid_to_pixels(j),
-                        player=self.player,
-                        obstacles=self.wall,    # les buissons bloquent la vue
-                        chests=self.chests
-                    )
-                    self.monsters.append(boss)
-
-        # Physics Engine :
         self.physics_engine = arcade.PhysicsEngineSimple(self.player, self.wall)
 
-        #Cameras :
+        # Deux caméras : une suit le monde (joueur), l'autre est fixe pour le HUD
         self.camera = arcade.camera.Camera2D()
         self.ui_camera = arcade.camera.Camera2D()
-
 
     def on_show_view(self) -> None:
         self.window.width = min(MAX_WINDOW_WIDTH, self.world_width)
@@ -220,7 +202,7 @@ class GameView(arcade.View):
                 monster.draw_extras()    # bombes + marqueurs + barre de vie
 
 
-            if not self.sword.is_active: # ATTACKS FROM THE BACK STILL HIT THE PLAYER
+            if not self.sword.is_active:
                 arcade.draw_sprite(self.player, pixelated=True)
 
             current = self.player.equipped_weapons[self.player.current_weapon]
@@ -228,67 +210,40 @@ class GameView(arcade.View):
                 arcade.draw_sprite(current, pixelated=True)
 
         with self.ui_camera.activate():
-            arcade.Text(text=f"Score : {self.score}",x=10,y=self.window.height - 30,color=arcade.color.WHITE,font_size=20).draw()
-
-            x = self.window.width - 48
-            y = self.window.height - 48
-
-            arcade.draw_texture_rect(
-                ICON_ITEM_BOX,
-                arcade.LBWH(x, y, 32, 32)
-            )
-
-            arcade.draw_texture_rect(
-                self.weapons_icons[self.player.current_weapon],
-                arcade.LBWH(x + 8, y + 8, 32, 32)  # slight padding inside box
-            )
-
-            if self.game_won:
-                arcade.Text(
-                    "YOU WIN !",
-                    x=self.window.width / 2,
-                    y=self.window.height / 2,
-                    color=arcade.color.GOLD,
-                    font_size=40,
-                    anchor_x="center",
-                ).draw()
-
-            self.player.health_bar.draw(
-                self.window.width /2,
-                self.window.height - TILE_SIZE
-            )
+            self.overlay.draw(self.score, self.player.current_weapon, self.player.health_bar, self.window.width, self.window.height)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        if symbol == arcade.key.SPACE:
-            self.window.show_view(GameView(MAP_DECOUVERTE))
-        elif symbol == arcade.key.D:
-            self.player.equipped_weapons[self.player.current_weapon].attack()
-        else:
-            self.player.on_key_press(symbol, modifiers)
+        match symbol:
+            case arcade.key.SPACE:
+                self.window.show_view(GameView(MAP_DECOUVERTE))
+            case arcade.key.D:
+                self.player.equipped_weapons[self.player.current_weapon].attack()
+            case _:
+                self.player.on_key_press(symbol, modifiers)
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
         self.player.on_key_release(symbol, modifiers)
 
-
-
     def on_update(self, delta_time: float) -> None:
-        #def of the current weapon :
-
         current = self.player.equipped_weapons[self.player.current_weapon]
+        self._update_player(delta_time, current)
+        self._update_monsters(delta_time)
+        self._collect_crystals(current)
+        self._update_combat(current)
+        self._update_switch_and_gate(current)
+        if self._update_chest_and_crystal_gate(delta_time):
+            return
+        self.pan_camera_to_player(delta_time)
 
+    def _update_player(self, delta_time: float, current: Weapons) -> None:
         self.physics_engine.update()
-
         if not self.player.is_attacking:
             self.player.update_animation()
-
         self.crystals.update_animation()
-
         current.update_weapon(delta_time)
-
         self.player.health_bar.update(delta_time)
 
-    # Monsters :
-
+    def _update_monsters(self, delta_time: float) -> None:
         to_remove = []
         for monster in self.monsters:
             if monster.death_state == MonsterState.alive:
@@ -298,93 +253,77 @@ class GameView(arcade.View):
                 to_remove.append(monster)
             else:
                 monster.update_animation()
-
         for monster in to_remove:
             monster.on_death()
             self.monsters.remove(monster)
 
-    # Crystals :
-
+    def _collect_crystals(self, current: Weapons) -> None:
         for x in arcade.check_for_collision_with_list(self.player, self.crystals):
             x.remove_from_sprite_lists()
             self.score += 1
+            arcade.play_sound(SOUND_CRYSTAL)
+        if current.is_active and current.collects_crystals:
+            for x in arcade.check_for_collision_with_list(current.collision_sprite, self.crystals, 3):
+                x.remove_from_sprite_lists()
+                self.score += 1
+                arcade.play_sound(SOUND_CRYSTAL)
 
-    # Attack :
-
+    def _update_combat(self, current: Weapons) -> None:
         if current.is_active:
-            if current.collects_crystals:
-                for x in arcade.check_for_collision_with_list(current, self.crystals, 3):
-                    x.remove_from_sprite_lists()
-                    self.score += 1
-
-            for monster in arcade.check_for_collision_with_list(current, self.monsters, 3):
+            for monster in arcade.check_for_collision_with_list(current.collision_sprite, self.monsters, 3):
                 if monster.death_state == MonsterState.alive:
-                        monster.take_hit()
-
+                    monster.take_hit()
 
         if any(monster.death_state == MonsterState.alive for monster in arcade.check_for_collision_with_list(self.player, self.monsters)):
             if self.player.take_hit():
-                self.window.show_view(GameView(MAP_DECOUVERTE))
+                self.window.show_view(GameOverView())
 
         for monster in self.monsters:
             if monster.projectile_hits_player(self.player):
                 if self.player.take_hit():
-                    self.window.show_view(GameView(MAP_DECOUVERTE))
-
+                    self.window.show_view(GameOverView())
 
         if self.boomerang.state == BoomerangState.launching:
             for wall in arcade.check_for_collision_with_list(self.boomerang, self.wall):
                 self.boomerang.start_returning()
 
         for hole in self.holes:
-            distance = arcade.math.get_distance(self.player.center_x,self.player.center_y,hole.center_x,hole.center_y,)
-            if distance <= HOLE_FALL_DISTANCE:
-                self.window.show_view(GameView(MAP_DECOUVERTE))
+            if arcade.math.get_distance(self.player.center_x, self.player.center_y, hole.center_x, hole.center_y) <= HOLE_FALL_DISTANCE:
+                self.window.show_view(GameOverView())
 
+    def _update_switch_and_gate(self, current: Weapons) -> None:
         for switch in arcade.check_for_collision_with_list(current, self.switches):
-            switch.toggle()
+            # Évite de toggler le même switch plusieurs fois lors d'un seul passage de l'arme
+            if switch not in current._toggled_switches:
+                current._toggled_switches.add(switch)
+                switch.toggle()
             if self.boomerang.state == BoomerangState.launching:
                 self.boomerang.start_returning()
 
         switches_dict = {s.switch_id: s for s in self.switches if s.switch_id is not None}
         for gate in self.gates:
             gate.update_state(switches_dict)
-            if gate.is_open and gate in self.wall:
-                self.wall.remove(gate)
-            if not gate.is_open and gate not in self.wall:
-                self.wall.append(gate)
+            gate.sync_wall(self.wall)
 
-        # --- Joueur atteint le coffre ouvert ---
+    def _update_chest_and_crystal_gate(self, delta_time: float) -> bool:
         for chest in self.chests:
-            chest.update_chest(delta_time)   # ouverture
+            chest.update_chest(delta_time)
             if chest.is_open and arcade.check_for_collision(self.player, chest):
-                self.game_won = True
-                return
+                self.window.show_view(GameWonView())
+                return True
 
-        # --- Porte à cristaux ---
         crystal_count = len(self.crystals)
         for cgate in self.crystal_gates:
-            was_open = cgate.is_open
             cgate.update_state(crystal_count)
-            if cgate.is_open and not was_open:
-                # La porte s'ouvre : retirer du mur pour laisser passer
-                if cgate in self.wall:
-                    self.wall.remove(cgate)
-            elif not cgate.is_open and was_open:
-                if cgate not in self.wall:
-                    self.wall.append(cgate)
+            cgate.sync_wall(self.wall)
 
-        # Transition : crystal gate ouverte + joueur proche (pas besoin de collision exacte)
         if not self.boss_room_entered and len(self.crystals) == 0:
             for cgate in self.crystal_gates:
-                dist = arcade.math.get_distance(
-                    self.player.center_x, self.player.center_y,
-                    cgate.center_x, cgate.center_y,
-                )
-                if dist <= TILE_SIZE * 1.5:
+                if arcade.math.get_distance(self.player.center_x, self.player.center_y, cgate.center_x, cgate.center_y) <= TILE_SIZE * 0.5:
                     self.window.show_view(GameView(MAP_BOSS))
-                    return
-        self.pan_camera_to_player(delta_time)
+                    return True
+
+        return False
 
     def pan_camera_to_player(self, delta_time: float) -> None:
         dead_zone_width = self.camera.width*0.4

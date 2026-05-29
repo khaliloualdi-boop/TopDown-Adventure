@@ -4,14 +4,13 @@ from player import Player
 import arcade
 
 class MonsterState(Enum):
+    """États du cycle de vie d'un monstre"""
     alive = auto()
     dying = auto()
     dead = auto()
 
 class Monster(ABC, arcade.TextureAnimationSprite):
-    """
-    Classe parent pour tous les monstres.
-    """
+    """Classe abstraite commune à tous les monstres ; gère le cycle de vie et la mort."""
 
     def __init__(self, animation: arcade.TextureAnimation, scale: float, center_x: float, center_y: float) -> None:
         super().__init__(animation=animation, scale=scale, center_x=center_x, center_y=center_y)

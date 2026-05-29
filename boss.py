@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import assert_never
 import arcade
 from arcade import Vec2
 from constants import SCALE, TILE_SIZE, BOSS_HIT_DURATION, BOSS_ATTACK_DURATION, BOSS_DEATH_DURATION
@@ -21,6 +22,7 @@ BOSS_SIGHT_RANGE = 9 * TILE_SIZE
 
 
 class BossState(Enum):
+    """États du boss"""
     idle = 0
     attacking = 1
     hit = 2
@@ -90,6 +92,8 @@ class Boss(Monster):
                 self.animation = ANIMATION_BOMBERPLANT_ATTACK
             case BossState.hit:
                 self.animation = ANIMATION_BOMBERPLANT_HIT
+            case _:
+                assert_never(new_state)
 
     def _can_see_player(self) -> bool:
         return arcade.has_line_of_sight(self.position, self.player.position, self.obstacles, max_distance=BOSS_SIGHT_RANGE)
